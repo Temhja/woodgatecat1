@@ -7,295 +7,147 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0d0d0d">
-<title>WoodGate — Catalog 2025</title>
+<title>WoodGate Catalog 2025</title>
 <style>
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+:root{
+  --gold:#d4a017;--gold2:#f5c842;--bg:#0d0d0d;
+  --w:#fff;--w7:rgba(255,255,255,.7);--w4:rgba(255,255,255,.4);--w15:rgba(255,255,255,.15);
+  --bdr:rgba(255,255,255,.12);
+}
+html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);font-family:-apple-system,'Segoe UI',sans-serif;color:var(--w);}
 
-:root {
-  --gold:  #d4a017;
-  --gold2: #f5c842;
-  --bg:    #0d0d0d;
-  --white: #ffffff;
-  --white2: rgba(255,255,255,0.7);
-  --white3: rgba(255,255,255,0.35);
-  --border: rgba(255,255,255,0.12);
-}
+/* APP */
+#app{width:100%;height:100%;display:flex;flex-direction:column;align-items:center;}
 
-html, body { width:100%; height:100%; overflow:hidden; background:var(--bg); font-family: -apple-system, 'Segoe UI', sans-serif; }
+/* TOP BAR */
+#topbar{
+  width:100%;flex-shrink:0;z-index:100;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:9px 16px 7px;background:#0d0d0d;
+  border-bottom:1px solid rgba(212,160,23,.22);gap:10px;direction:ltr;
+}
+#brand{display:flex;align-items:center;gap:8px;flex-shrink:0;}
+.bmark{width:30px;height:30px;border:1.5px solid var(--gold);border-radius:5px;display:flex;align-items:center;justify-content:center;}
+.bmark svg{width:17px;height:17px;}
+.bname{font-size:clamp(13px,3vw,17px);font-weight:700;letter-spacing:2px;color:var(--w);text-transform:uppercase;line-height:1.1;}
+.bsub{font-size:9px;letter-spacing:2px;color:var(--w4);text-transform:uppercase;}
 
-/* ════ APP SHELL ════════════════════════════════════════════ */
-#app { width:100%; height:100%; display:flex; flex-direction:column; align-items:center; }
-
-/* ════ TOP BAR ══════════════════════════════════════════════ */
-#topbar {
-  width:100%; flex-shrink:0;
-  display:flex; align-items:center; justify-content:space-between;
-  padding: 10px 16px 8px;
-  background: #0d0d0d;
-  border-bottom: 1px solid rgba(212,160,23,0.25);
-  gap: 10px;
-  z-index: 100;
+#search-wrap{flex:1;max-width:200px;position:relative;display:flex;align-items:center;}
+#search-icon{position:absolute;left:9px;top:50%;transform:translateY(-50%);color:var(--w4);pointer-events:none;display:flex;align-items:center;}
+#search-input{
+  width:100%;background:rgba(255,255,255,.07);border:1px solid var(--bdr);border-radius:8px;
+  padding:6px 42px 6px 28px;color:var(--w);font-size:12px;outline:none;direction:ltr;text-align:center;
+  -webkit-appearance:none;transition:border-color .2s;
 }
-
-/* brand */
-#brand { display:flex; align-items:center; gap:8px; flex-shrink:0; }
-.bmark {
-  width:30px; height:30px; border:1.5px solid var(--gold); border-radius:5px;
-  display:flex; align-items:center; justify-content:center; flex-shrink:0;
-}
-.bmark svg { width:17px; height:17px; }
-.bname {
-  font-size: clamp(13px,3vw,18px); font-weight:700;
-  letter-spacing:2px; color: var(--white); text-transform:uppercase; line-height:1.1;
-}
-.bsub { font-size:9px; letter-spacing:2px; color:var(--white3); text-transform:uppercase; }
-
-/* search box */
-#search-wrap {
-  flex:1; max-width:180px; position:relative;
-  display:flex; align-items:center;
-}
-#search-input {
-  width:100%; background:rgba(255,255,255,0.07);
-  border:1px solid var(--border); border-radius:8px;
-  padding: 6px 10px 6px 32px;
-  color: var(--white); font-size:12px;
-  outline:none; direction:ltr; text-align:center;
-  transition: border-color 0.2s;
-  -webkit-appearance: none;
-}
-#search-input::placeholder { color:var(--white3); }
-#search-input:focus { border-color:rgba(212,160,23,0.6); }
-#search-icon {
-  position:absolute; left:9px; top:50%; transform:translateY(-50%);
-  pointer-events:none; color:var(--white3);
-}
-#search-go {
-  position:absolute; right:6px; top:50%; transform:translateY(-50%);
-  background: var(--gold); border:none; border-radius:5px;
-  padding:2px 6px; font-size:10px; font-weight:700;
-  color:#000; cursor:pointer; letter-spacing:0.5px;
+#search-input::placeholder{color:var(--w4);}
+#search-input:focus{border-color:rgba(212,160,23,.55);}
+#search-input::-webkit-inner-spin-button,#search-input::-webkit-outer-spin-button{-webkit-appearance:none;}
+#search-go{
+  position:absolute;right:5px;top:50%;transform:translateY(-50%);
+  background:var(--gold);border:none;border-radius:5px;
+  padding:3px 7px;font-size:10px;font-weight:700;color:#000;cursor:pointer;
   touch-action:manipulation;
 }
-#search-go:active { opacity:0.8; }
-
-/* fullscreen btn */
-#fs-btn {
-  background:rgba(255,255,255,0.06); border:1px solid var(--border);
-  border-radius:7px; padding:6px 10px; cursor:pointer;
-  color:var(--white2); display:flex; align-items:center; gap:5px;
-  font-size:10px; letter-spacing:1px;
-  touch-action:manipulation; flex-shrink:0; white-space:nowrap;
-  transition:all 0.2s;
+#search-go:active{opacity:.8;}
+#fs-btn{
+  background:rgba(255,255,255,.06);border:1px solid var(--bdr);border-radius:7px;
+  padding:6px 9px;cursor:pointer;color:var(--w7);
+  display:flex;align-items:center;gap:5px;font-size:10px;letter-spacing:1px;
+  touch-action:manipulation;flex-shrink:0;white-space:nowrap;transition:all .2s;
 }
-#fs-btn:active { background:rgba(255,255,255,0.12); transform:scale(0.95); }
+#fs-btn:active{background:rgba(255,255,255,.12);transform:scale(.95);}
 
-/* ════ SCENE ════════════════════════════════════════════════ */
-#scene-wrap {
-  flex:1; width:100%;
-  display:flex; align-items:center; justify-content:center;
-  padding: 6px 10px 2px;
-  position:relative;
+/* SCENE */
+#scene-wrap{flex:1;width:100%;display:flex;align-items:center;justify-content:center;padding:8px 10px 4px;}
+#scene{perspective:2000px;perspective-origin:50% 44%;position:relative;}
+#book{
+  position:relative;transform-style:preserve-3d;border-radius:4px;
+  box-shadow:0 0 0 1px rgba(212,160,23,.14),0 28px 80px rgba(0,0,0,.95),0 6px 18px rgba(0,0,0,.7);
 }
-
-#scene {
-  perspective: 1600px;
-  perspective-origin: 50% 46%;
-  width:100%;
-  /* constrain by both vw and available height to stay 16:9 */
-  max-width: min(96vw, calc((100vh - 138px) * 16 / 9));
+#book::after{
+  content:'';position:absolute;bottom:-14px;left:5%;width:90%;height:18px;
+  background:radial-gradient(ellipse at 50% 0%,rgba(0,0,0,.8) 0%,transparent 70%);
+  border-radius:50%;pointer-events:none;transform:scaleY(.5);
 }
 
-#book-wrap { width:100%; padding-bottom:56.25%; position:relative; }
+/* PAGES */
+#pg-right,#pg-left{
+  position:absolute;top:0;height:100%;
+  background:#111 center/cover no-repeat;overflow:hidden;
+}
+#pg-right{right:0;width:50%;border-radius:0 4px 4px 0;}
+#pg-left{left:0;width:50%;border-radius:4px 0 0 4px;}
+#pg-right::before{content:'';position:absolute;inset:0;pointer-events:none;background:linear-gradient(to left,rgba(0,0,0,.2) 0%,transparent 10%);z-index:2;}
+#pg-left::before{content:'';position:absolute;inset:0;pointer-events:none;background:linear-gradient(to right,rgba(0,0,0,.2) 0%,transparent 10%);z-index:2;}
 
-#book {
-  position:absolute; inset:0;
-  transform-style:preserve-3d;
-  transform: rotateX(4deg);
-  border-radius:4px;
-  box-shadow: 0 0 0 1px rgba(212,160,23,0.15), 0 30px 90px rgba(0,0,0,0.95), 0 6px 20px rgba(0,0,0,0.7);
-}
+/* cover mode */
+#book.cover-mode #pg-right{width:100%;border-radius:4px;}
+#book.cover-mode #pg-left{display:none;}
 
-/* ── STATIC SPREAD ─────────────────────────────────────── */
-/*
-  Each pg*.jpg = full landscape spread (both pages in one image).
-  We show it as a plain background-image covering the whole book.
-*/
-#spread {
-  position:absolute; inset:0;
-  border-radius:4px; overflow:hidden;
-  background: #111 center/cover no-repeat;
+/* FLIPPER - left half, hinge at right (centre spine) */
+#flipper{
+  position:absolute;top:0;left:0;height:100%;width:50%;
+  transform-style:preserve-3d;display:none;z-index:20;
+  transform-origin:right center;
 }
+.face{position:absolute;inset:0;backface-visibility:hidden;background:#111 center/cover no-repeat;overflow:hidden;}
+#fb{transform:rotateY(180deg);}
 
-/* spine decoration */
-#spread::after {
-  content:''; position:absolute; left:50%; top:0; transform:translateX(-50%);
-  width:3px; height:100%;
-  background: linear-gradient(to right, rgba(0,0,0,0.55), rgba(255,255,255,0.05) 40%, rgba(255,255,255,0.05) 60%, rgba(0,0,0,0.55));
-  z-index:3; pointer-events:none;
+/* BOTTOM BAR */
+#bottombar{
+  width:100%;flex-shrink:0;z-index:100;
+  display:flex;align-items:center;justify-content:center;
+  gap:12px;padding:5px 16px 9px;background:#0d0d0d;
+  border-top:1px solid rgba(212,160,23,.14);direction:ltr;
 }
+.ctrl{
+  width:clamp(34px,8vw,42px);height:clamp(34px,8vw,42px);border-radius:50%;
+  background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.18);
+  cursor:pointer;color:var(--w);display:flex;align-items:center;justify-content:center;
+  transition:all .15s;flex-shrink:0;touch-action:manipulation;
+}
+.ctrl:active:not(:disabled){background:rgba(212,160,23,.22);border-color:var(--gold);box-shadow:0 0 16px rgba(212,160,23,.38);transform:scale(.9);}
+.ctrl:disabled{opacity:.2;cursor:default;}
+#nav-center{display:flex;flex-direction:column;align-items:center;gap:5px;flex:1;min-width:0;}
+#dots-outer{max-width:min(50vw,220px);overflow:hidden;}
+#dots{display:flex;gap:7px;align-items:center;transition:transform .3s ease;}
+.dot{width:clamp(5px,1.3vw,7px);height:clamp(5px,1.3vw,7px);border-radius:50%;flex-shrink:0;background:rgba(255,255,255,.18);transition:all .22s;cursor:pointer;touch-action:manipulation;}
+.dot.on{background:var(--gold);box-shadow:0 0 7px rgba(212,160,23,.75);transform:scale(1.55);}
+.dot.near{background:rgba(255,255,255,.5);transform:scale(1.2);}
+#counter{font-size:clamp(10px,2vw,12px);color:var(--w);font-weight:500;letter-spacing:1px;}
+#hint{font-size:clamp(8px,1.5vw,10px);color:var(--w4);letter-spacing:1.5px;text-transform:uppercase;}
 
-/* edge shadow overlay */
-#spread::before {
-  content:''; position:absolute; inset:0; z-index:2; pointer-events:none;
-  background:
-    linear-gradient(to left,  rgba(0,0,0,0.25) 0%, transparent 7%),
-    linear-gradient(to right, rgba(0,0,0,0.25) 0%, transparent 7%);
-}
+/* TOAST */
+#toast{position:absolute;bottom:72px;left:50%;transform:translateX(-50%);background:#222;border:1px solid rgba(212,160,23,.3);border-radius:8px;padding:8px 18px;font-size:12px;color:var(--w7);opacity:0;pointer-events:none;transition:opacity .3s;z-index:300;white-space:nowrap;}
+#toast.show{opacity:1;}
 
-/* ── FLIPPER ───────────────────────────────────────────── */
-/*
-  RTL book: pages turn from the RIGHT side.
-  The flipper sits over the RIGHT half of the book.
-  Hinge = RIGHT edge  →  transform-origin: right center.
+/* LOADER */
+#loader{position:absolute;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;z-index:999;transition:opacity .6s;}
+#loader.fade{opacity:0;pointer-events:none;}
+.l-box{width:50px;height:50px;border:2px solid var(--gold);border-radius:8px;display:flex;align-items:center;justify-content:center;}
+.l-name{font-size:clamp(22px,5vw,30px);font-weight:700;letter-spacing:5px;text-transform:uppercase;color:var(--w);}
+.l-sub{font-size:10px;letter-spacing:4px;color:var(--w4);text-transform:uppercase;}
+.l-bar-wrap{width:140px;height:1px;background:rgba(255,255,255,.1);overflow:hidden;}
+.l-bar{height:100%;background:linear-gradient(90deg,var(--gold),var(--gold2));animation:lb 1.4s ease-out forwards;}
+@keyframes lb{from{width:0}to{width:100%}}
 
-  We show "half" of the full spread image using:
-    background-size: 200% 100%
-    front face → background-position: 100% 50%  (right half = current page)
-    back  face → background-position: 100% 50%  (right half = next page,
-                 but mirrored by rotateY(180deg) so it reads correctly)
-
-  FORWARD (next): rotateY  0 → +180  (peels left = RTL forward direction)
-  BACKWARD (prev): rotateY 0 → -180  (peels right = RTL back)
-*/
-#flipper {
-  position:absolute; top:0; right:0;
-  height:100%;
-  transform-style:preserve-3d;
-  display:none; z-index:20;
-}
-.face {
-  position:absolute; inset:0;
-  backface-visibility:hidden;
-  background: #111 no-repeat;
-  background-size: 200% 100%;
-}
-/* front = right half of image (right half of a 200%-wide bg = position 100%) */
-#ff { background-position: 100% 50%; }
-/* back = also shows right half, but rotateY(180deg) mirrors it correctly */
-#fb { background-position: 100% 50%; transform: rotateY(180deg); }
-
-/* page-curl shadow on the turning face */
-#ff::after {
-  content:''; position:absolute; inset:0; pointer-events:none;
-  background: linear-gradient(to left, rgba(0,0,0,0.0) 0%, transparent 100%);
-}
-
-/* ── GROUND SHADOW ─────────────────────────────────────── */
-#book-shadow {
-  position:absolute; bottom:-14px; left:5%;
-  width:90%; height:20px;
-  background: radial-gradient(ellipse at 50% 0%, rgba(0,0,0,0.75) 0%, transparent 70%);
-  border-radius:50%; pointer-events:none; transform:scaleY(0.5);
-}
-
-/* ════ BOTTOM BAR ═══════════════════════════════════════════ */
-#bottombar {
-  width:100%; flex-shrink:0;
-  display:flex; align-items:center; justify-content:center;
-  gap:12px; padding:6px 16px 8px;
-  background:#0d0d0d;
-  border-top:1px solid rgba(212,160,23,0.15);
-  z-index:100;
-}
-
-/* arrows */
-.ctrl {
-  width:clamp(34px,8vw,42px); height:clamp(34px,8vw,42px);
-  border-radius:50%;
-  background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.18);
-  cursor:pointer; display:flex; align-items:center; justify-content:center;
-  color: var(--white); transition:all 0.15s; flex-shrink:0;
-  touch-action:manipulation;
-}
-.ctrl:active:not(:disabled) {
-  background:rgba(212,160,23,0.25); border-color:var(--gold);
-  box-shadow:0 0 16px rgba(212,160,23,0.4); transform:scale(0.9);
-}
-.ctrl:disabled { opacity:0.2; cursor:default; }
-.ctrl svg { width:14px; height:14px; }
-
-/* centre nav */
-#nav-center { display:flex; flex-direction:column; align-items:center; gap:6px; flex:1; min-width:0; }
-
-/* dots — sliding window */
-#dots-outer { width:clamp(100px,40vw,200px); overflow:hidden; }
-#dots { display:flex; gap:7px; align-items:center; transition:transform 0.3s ease; }
-.dot {
-  width:clamp(5px,1.3vw,7px); height:clamp(5px,1.3vw,7px);
-  border-radius:50%; flex-shrink:0;
-  background:rgba(255,255,255,0.18);
-  transition:all 0.22s; cursor:pointer; touch-action:manipulation;
-}
-.dot.on { background:var(--gold); box-shadow:0 0 8px rgba(212,160,23,0.7); transform:scale(1.55); }
-.dot.near { background:rgba(255,255,255,0.5); transform:scale(1.2); }
-
-#counter {
-  font-size:clamp(10px,2vw,12px); color:var(--white); font-weight:500;
-  letter-spacing:1px; direction:ltr;
-}
-
-#hint {
-  font-size:clamp(8px,1.5vw,10px); color:var(--white3);
-  letter-spacing:1.5px; text-transform:uppercase; direction:ltr;
-}
-
-/* ════ LOADER ════════════════════════════════════════════════ */
-#loader {
-  position:absolute; inset:0; background:var(--bg);
-  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:16px;
-  z-index:999; transition:opacity 0.6s;
-}
-#loader.fade { opacity:0; pointer-events:none; }
-.l-box { width:50px; height:50px; border:2px solid var(--gold); border-radius:8px; display:flex; align-items:center; justify-content:center; }
-.l-box svg { width:28px; height:28px; }
-.l-name { font-size:clamp(22px,5vw,32px); font-weight:700; letter-spacing:5px; text-transform:uppercase; color:var(--white); }
-.l-sub { font-size:10px; letter-spacing:4px; color:var(--white3); text-transform:uppercase; }
-.l-bar-wrap { width:140px; height:1px; background:rgba(255,255,255,0.1); border-radius:1px; overflow:hidden; }
-.l-bar { height:100%; background:linear-gradient(90deg,var(--gold),var(--gold2)); animation:lb 1.4s ease-out forwards; }
-@keyframes lb { from{width:0} to{width:100%} }
-
-/* ════ HOW-TO ════════════════════════════════════════════════ */
-#howto {
-  position:absolute; inset:0;
-  display:flex; align-items:center; justify-content:center;
-  background:rgba(0,0,0,0.82); backdrop-filter:blur(6px);
-  z-index:50; opacity:0; pointer-events:none; transition:opacity 0.3s;
-}
-#howto.show { opacity:1; pointer-events:all; }
-.hw-card {
-  background:#1a1a1a; border:1px solid rgba(212,160,23,0.25); border-radius:14px;
-  padding:clamp(18px,4vw,28px) clamp(22px,5vw,36px);
-  text-align:center; max-width:clamp(240px,75vw,340px);
-  display:flex; flex-direction:column; align-items:center; gap:12px;
-}
-.hw-title { font-size:clamp(16px,4vw,21px); font-weight:700; color:var(--white); letter-spacing:1px; }
-.hw-gold { color:var(--gold); }
-.hw-body { font-size:clamp(11px,2.3vw,13px); color:var(--white2); line-height:2; }
-.hw-btn {
-  padding:8px 28px; background:var(--gold); border:none; border-radius:8px;
-  color:#000; font-size:12px; font-weight:700; letter-spacing:1px;
-  text-transform:uppercase; cursor:pointer; touch-action:manipulation;
-  transition:all 0.2s;
-}
-.hw-btn:active { opacity:0.85; transform:scale(0.97); }
-
-/* ════ SEARCH TOAST ══════════════════════════════════════════ */
-#toast {
-  position:absolute; bottom:80px; left:50%; transform:translateX(-50%);
-  background:#1a1a1a; border:1px solid rgba(212,160,23,0.35); border-radius:8px;
-  padding:8px 18px; font-size:12px; color:var(--white2);
-  opacity:0; transition:opacity 0.3s; pointer-events:none; z-index:200;
-  white-space:nowrap;
-}
-#toast.show { opacity:1; }
+/* HOW-TO */
+#howto{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.82);backdrop-filter:blur(6px);z-index:50;opacity:0;pointer-events:none;transition:opacity .3s;}
+#howto.show{opacity:1;pointer-events:all;}
+.hw{background:#1a1a1a;border:1px solid rgba(212,160,23,.25);border-radius:14px;padding:clamp(18px,4vw,28px) clamp(22px,5vw,36px);text-align:center;max-width:clamp(240px,78vw,360px);display:flex;flex-direction:column;align-items:center;gap:12px;}
+.hw-title{font-size:clamp(16px,4vw,20px);font-weight:700;color:var(--w);letter-spacing:1px;}
+.hw-gold{color:var(--gold);}
+.hw-body{font-size:clamp(11px,2.3vw,13px);color:var(--w7);line-height:2;direction:rtl;}
+.hw-btn{padding:9px 30px;background:var(--gold);border:none;border-radius:8px;color:#000;font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;touch-action:manipulation;}
+.hw-btn:active{opacity:.82;}
 </style>
 </head>
 <body>
 
 <div id="loader">
   <div class="l-box">
-    <svg viewBox="0 0 26 26" fill="none">
+    <svg viewBox="0 0 26 26" fill="none" width="28" height="28">
       <rect x="2" y="2" width="10" height="10" rx="1.5" stroke="#d4a017" stroke-width="1.5"/>
       <rect x="14" y="2" width="10" height="10" rx="1.5" stroke="#d4a017" stroke-width="1.5"/>
       <rect x="2" y="14" width="10" height="10" rx="1.5" stroke="#d4a017" stroke-width="1.5"/>
@@ -308,7 +160,7 @@ html, body { width:100%; height:100%; overflow:hidden; background:var(--bg); fon
 </div>
 
 <div id="howto">
-  <div class="hw-card">
+  <div class="hw">
     <div class="l-box">
       <svg viewBox="0 0 26 26" fill="none" width="28" height="28">
         <rect x="2" y="2" width="10" height="10" rx="1.5" stroke="#d4a017" stroke-width="1.5"/>
@@ -318,12 +170,7 @@ html, body { width:100%; height:100%; overflow:hidden; background:var(--bg); fon
       </svg>
     </div>
     <div class="hw-title">WoodGate <span class="hw-gold">Catalog</span></div>
-    <div class="hw-body">
-      اسحب يميناً ← للصفحة التالية<br>
-      اسحب يساراً → للصفحة السابقة<br>
-      أدخل رقم الصفحة للانتقال مباشرة<br>
-      اضغط النقاط للتنقل السريع
-    </div>
+    <div class="hw-body">اضغط السهم الأيمن لفتح الكتاب<br>اسحب يميناً للصفحة التالية<br>اسحب يساراً للعودة للخلف<br>أدخل رقم الصفحة للانتقال المباشر</div>
     <button class="hw-btn" onclick="closeHowTo()">ابدأ التصفح</button>
   </div>
 </div>
@@ -331,8 +178,6 @@ html, body { width:100%; height:100%; overflow:hidden; background:var(--bg); fon
 <div id="toast"></div>
 
 <div id="app">
-
-  <!-- TOP BAR -->
   <div id="topbar">
     <div id="brand">
       <div class="bmark">
@@ -348,8 +193,6 @@ html, body { width:100%; height:100%; overflow:hidden; background:var(--bg); fon
         <div class="bsub">Kitchen Doors</div>
       </div>
     </div>
-
-    <!-- PAGE SEARCH -->
     <div id="search-wrap">
       <span id="search-icon">
         <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
@@ -362,7 +205,6 @@ html, body { width:100%; height:100%; overflow:hidden; background:var(--bg); fon
         oninput="this.value=this.value.replace(/[^0-9]/g,'')">
       <button id="search-go" onclick="goToPage()">Go</button>
     </div>
-
     <button id="fs-btn" onclick="toggleFS()">
       <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
         <path d="M1.5 4V1.5H4M8 1.5H10.5V4M10.5 8V10.5H8M4 10.5H1.5V8" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -371,332 +213,406 @@ html, body { width:100%; height:100%; overflow:hidden; background:var(--bg); fon
     </button>
   </div>
 
-  <!-- BOOK -->
   <div id="scene-wrap">
     <div id="scene">
-      <div id="book-wrap">
-        <div id="book">
-          <div id="spread"></div>
-          <div id="book-shadow"></div>
-          <div id="flipper">
-            <div class="face" id="ff"></div>
-            <div class="face" id="fb"></div>
-          </div>
+      <div id="book">
+        <div id="pg-left"></div>
+        <div id="pg-right"></div>
+        <div id="flipper">
+          <div class="face" id="ff"></div>
+          <div class="face" id="fb"></div>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- BOTTOM BAR -->
   <div id="bottombar">
-
-    <!-- RIGHT chevron = BACK (previous) in RTL reading -->
     <button class="ctrl" id="btn-back" disabled onclick="turn(-1)">
-      <svg viewBox="0 0 14 14" fill="none">
-        <path d="M5 2.5L10 7L5 11.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
-    </button>
-
-    <div id="nav-center">
-      <div id="dots-outer"><div id="dots"></div></div>
-      <div id="counter"></div>
-    </div>
-
-    <!-- LEFT chevron = FORWARD (next) in RTL reading -->
-    <button class="ctrl" id="btn-fwd" onclick="turn(1)">
-      <svg viewBox="0 0 14 14" fill="none">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
         <path d="M9 2.5L4 7L9 11.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
     </button>
-
+    <div id="nav-center">
+      <div id="dots-outer"><div id="dots"></div></div>
+      <div id="counter">الغلاف</div>
+    </div>
+    <button class="ctrl" id="btn-fwd" onclick="turn(1)">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+        <path d="M5 2.5L10 7L5 11.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </button>
   </div>
-
   <div id="hint">swipe right = next &nbsp;·&nbsp; swipe left = back</div>
-
 </div>
 
 <script>
-/* ═══════════════════════════════════════════════════════
+/* =================================================================
    PAGES CONFIG
-   ───────────────────────────────────────────────────────
-   Each entry = one full landscape spread image.
-   File naming: pages/pg1.jpg, pages/pg2.jpg … pages/pg40.jpg
+   =================================================================
+   One entry per image file. pg1 = cover, then pairs form spreads.
 
-   ADDING YOUR PAGES:
-   Just keep copying the pattern below.
-   label = what shows in the bottom counter (use any text).
-   ═══════════════════════════════════════════════════════ */
+   Layout:
+     pg1          → cover (single page, shown alone)
+     pg2 + pg3    → spread 1  (right=pg2, left=pg3)
+     pg4 + pg5    → spread 2  (right=pg4, left=pg5)
+     ...
+     pg40         → back cover (single page, if total is even+1)
 
+   Add all your pages below — lines are ready, just uncomment.
+   ================================================================= */
 const PAGES = [
-  { src: 'pages/pg1.jpg',  label: 'الغلاف — ١' },
-  
- 
-  { src: 'pages/pg2.jpg',  label: '٢' },
-  { src: 'pages/pg3.jpg',  label: '٣' },
-  { src: 'pages/pg4.jpg',  label: '٤' },
-  { src: 'pages/pg5.jpg',  label: '٥' },
-  { src: 'pages/pg6.jpg',  label: '٦' },
-  { src: 'pages/pg7.jpg',  label: '٧' },
-  { src: 'pages/pg8.jpg',  label: '٨' },
-  { src: 'pages/pg9.jpg',  label: '٩' },
-  { src: 'pages/pg10.jpg', label: '١٠' },
-  { src: 'pages/pg11.jpg', label: '١١' },
-  { src: 'pages/pg12.jpg', label: '١٢' },
-  { src: 'pages/pg13.jpg', label: '١٣' },
-  { src: 'pages/pg14.jpg', label: '١٤' },
-  { src: 'pages/pg15.jpg', label: '١٥' },
-  { src: 'pages/pg16.jpg', label: '١٦' },
-  { src: 'pages/pg17.jpg', label: '١٧' },
-  { src: 'pages/pg18.jpg', label: '١٨' },
-  { src: 'pages/pg19.jpg', label: '١٩' },
-  { src: 'pages/pg20.jpg', label: '٢٠' },
-  { src: 'pages/pg21.jpg', label: '٢١' },
-  { src: 'pages/pg22.jpg', label: '٢٢' },
-  { src: 'pages/pg23.jpg', label: '٢٣' },
-  { src: 'pages/pg24.jpg', label: '٢٤' },
-  { src: 'pages/pg25.jpg', label: '٢٥' },
-  { src: 'pages/pg26.jpg', label: '٢٦' },
-  { src: 'pages/pg27.jpg', label: '٢٧' },
-  { src: 'pages/pg28.jpg', label: '٢٨' },
-  { src: 'pages/pg29.jpg', label: '٢٩' },
-  { src: 'pages/pg30.jpg', label: '٣٠' },
-  { src: 'pages/pg31.jpg', label: '٣١' },
-  { src: 'pages/pg32.jpg', label: '٣٢' },
-  { src: 'pages/pg33.jpg', label: '٣٣' },
-  { src: 'pages/pg34.jpg', label: '٣٤' },
-  { src: 'pages/pg35.jpg', label: '٣٥' },
-  { src: 'pages/pg36.jpg', label: '٣٦' },
-  { src: 'pages/pg37.jpg', label: '٣٧' },
-  { src: 'pages/pg38.jpg', label: '٣٨' },
-  { src: 'pages/pg39.jpg', label: '٣٩' },
-  { src: 'pages/pg40.jpg', label: 'الغلاف الخلفي — ٤٠' },
+  {src:'pages/pg1.jpg', label:'الغلاف'},
+  {src:'pages/pg2.jpg', label:'٢'},
+  {src:'pages/pg3.jpg', label:'٣'},
+  {src:'pages/pg4.jpg', label:'٤'},
+  {src:'pages/pg5.jpg', label:'٥'},
+  {src:'pages/pg6.jpg', label:'٦'},
+  {src:'pages/pg7.jpg', label:'٧'},
+  {src:'pages/pg8.jpg', label:'٨'},
+  {src:'pages/pg9.jpg', label:'٩'},
+  {src:'pages/pg10.jpg',label:'١٠'},
+  {src:'pages/pg11.jpg',label:'١١'},
+  {src:'pages/pg12.jpg',label:'١٢'},
+  {src:'pages/pg13.jpg',label:'١٣'},
+  {src:'pages/pg14.jpg',label:'١٤'},
+  {src:'pages/pg15.jpg',label:'١٥'},
+  {src:'pages/pg16.jpg',label:'١٦'},
+  {src:'pages/pg17.jpg',label:'١٧'},
+  {src:'pages/pg18.jpg',label:'١٨'},
+  {src:'pages/pg19.jpg',label:'١٩'},
+  {src:'pages/pg20.jpg',label:'٢٠'},
+  {src:'pages/pg21.jpg',label:'٢١'},
+  {src:'pages/pg22.jpg',label:'٢٢'},
+  {src:'pages/pg23.jpg',label:'٢٣'},
+  {src:'pages/pg24.jpg',label:'٢٤'},
+  {src:'pages/pg25.jpg',label:'٢٥'},
+  {src:'pages/pg26.jpg',label:'٢٦'},
+  {src:'pages/pg27.jpg',label:'٢٧'},
+  {src:'pages/pg28.jpg',label:'٢٨'},
+  {src:'pages/pg29.jpg',label:'٢٩'},
+  {src:'pages/pg30.jpg',label:'٣٠'},
+  {src:'pages/pg31.jpg',label:'٣١'},
+  {src:'pages/pg32.jpg',label:'٣٢'},
+  {src:'pages/pg33.jpg',label:'٣٣'},
+  {src:'pages/pg34.jpg',label:'٣٤'},
+  {src:'pages/pg35.jpg',label:'٣٥'},
+  {src:'pages/pg36.jpg',label:'٣٦'},
+  {src:'pages/pg37.jpg',label:'٣٧'},
+  {src:'pages/pg38.jpg',label:'٣٨'},
+  {src:'pages/pg39.jpg',label:'٣٩'},
+  {src:'pages/pg40.jpg',label:'الغلاف الخلفي'},
 ];
 
-/* ═══════════════════════════════════════════════════════
-   ENGINE
-   ═══════════════════════════════════════════════════════ */
-
-let cur = 0, busy = false;
-
-const $spread  = document.getElementById('spread');
-const $flipper = document.getElementById('flipper');
-const $ff      = document.getElementById('ff');
-const $fb      = document.getElementById('fb');
-const $back    = document.getElementById('btn-back');
-const $fwd     = document.getElementById('btn-fwd');
-const $counter = document.getElementById('counter');
-const $dots    = document.getElementById('dots');
-
-/* ── PRELOADER ────────────────────────────────────── */
-function preload(i) {
-  if (i < 0 || i >= PAGES.length) return;
-  const img = new Image(); img.src = PAGES[i].src;
+/* =================================================================
+   BUILD SPREADS
+   Converts flat PAGES list into spread objects:
+     {type:'cover',  right:page,  left:null}
+     {type:'spread', right:page,  left:page}
+     {type:'back',   right:page,  left:null}
+   ================================================================= */
+function buildSpreads(pages){
+  const s=[];
+  s.push({type:'cover',right:pages[0],left:null});
+  let i=1;
+  while(i<pages.length){
+    if(i+1<pages.length){
+      s.push({type:'spread',right:pages[i],left:pages[i+1]});
+      i+=2;
+    } else {
+      s.push({type:'back',right:pages[i],left:null});
+      i++;
+    }
+  }
+  return s;
 }
-function preloadAround(i) { preload(i+1); preload(i+2); preload(i-1); }
+const SPREADS=buildSpreads(PAGES);
 
-/* ── RENDER SPREAD ────────────────────────────────── */
-function render(i) {
-  /* display the full-spread image directly as background */
-  $spread.style.backgroundImage = `url('${PAGES[i].src}')`;
-  $spread.style.backgroundSize  = 'cover';
-  $spread.style.backgroundPosition = 'center';
+/* ================================================================= */
+let cur=0, busy=false, isSingle=true;
 
-  $counter.textContent = `${i + 1} / ${PAGES.length}  ·  ${PAGES[i].label}`;
-  $back.disabled = (i === 0);
-  $fwd.disabled  = (i === PAGES.length - 1);
-  updateDots(i);
-  preloadAround(i);
+const $book    =document.getElementById('book');
+const $scene   =document.getElementById('scene');
+const $pgR     =document.getElementById('pg-right');
+const $pgL     =document.getElementById('pg-left');
+const $flipper =document.getElementById('flipper');
+const $ff      =document.getElementById('ff');
+const $fb      =document.getElementById('fb');
+const $btnBack =document.getElementById('btn-back');
+const $btnFwd  =document.getElementById('btn-fwd');
+const $counter =document.getElementById('counter');
+const $dots    =document.getElementById('dots');
+
+/* Page aspect ratio: each page is A4 landscape = 297x210mm
+   Two pages side by side spread ratio = 594:210 = 2.828:1
+   Single page ratio = 297:210 = 1.414:1  */
+const SPREAD_R = 2.828;
+const PAD = 16;
+
+function getAvail(){
+  const w=document.getElementById('scene-wrap');
+  return{W:w.clientWidth-20, H:w.clientHeight-PAD*2};
 }
 
-/* ── DOTS ─────────────────────────────────────────── */
-const MAX_VIS = 15, DOT_PX = 13;
+function calcSize(single){
+  const{W,H}=getAvail();
+  const ratio=single?SPREAD_R/2:SPREAD_R;
+  let bW=Math.min(W,H*ratio);
+  let bH=bW/ratio;
+  if(bH>H){bH=H;bW=bH*ratio;}
+  return{bW:Math.round(bW),bH:Math.round(bH)};
+}
 
-function buildDots() {
-  $dots.innerHTML = '';
-  PAGES.forEach((_, i) => {
-    const d = document.createElement('div');
-    d.className = 'dot';
-    d.onclick = () => { if (!busy && i !== cur) jumpTo(i); };
+function applySize(single){
+  const{bW,bH}=calcSize(single);
+  const{bW:fullW}=calcSize(false);
+  $scene.style.width=fullW+'px';
+  $scene.style.height=bH+'px';
+  $book.style.height=bH+'px';
+  if(single){
+    $book.style.width=bW+'px';
+    /* centre single page within the full-width scene */
+    $book.style.marginLeft=Math.round((fullW-bW)/2)+'px';
+  } else {
+    $book.style.width=fullW+'px';
+    $book.style.marginLeft='0';
+  }
+}
+
+window.addEventListener('resize',()=>applySize(isSingle));
+
+/* PRELOAD */
+function preload(src){if(src){const i=new Image();i.src=src;}}
+function preloadAround(idx){
+  const n=SPREADS[idx+1],p=SPREADS[idx-1];
+  if(n){preload(n.right?.src);preload(n.left?.src);}
+  if(p){preload(p.right?.src);preload(p.left?.src);}
+}
+
+/* BG HELPER */
+function bg(src){return src?`url('${src}')`:'none';}
+
+/* RENDER */
+function render(idx){
+  const sp=SPREADS[idx];
+  isSingle=(sp.type==='cover'||sp.type==='back');
+  if(isSingle){
+    $book.classList.add('cover-mode');
+    $pgR.style.backgroundImage=bg(sp.right?.src);
+  } else {
+    $book.classList.remove('cover-mode');
+    $pgR.style.backgroundImage=bg(sp.right?.src);
+    $pgL.style.backgroundImage=bg(sp.left?.src);
+  }
+  applySize(isSingle);
+  updateUI(idx);
+  preloadAround(idx);
+}
+
+function updateUI(idx){
+  const sp=SPREADS[idx];
+  if(sp.type==='cover') $counter.textContent='الغلاف';
+  else if(sp.type==='back') $counter.textContent='الغلاف الخلفي';
+  else $counter.textContent=`${sp.right?.label||''} – ${sp.left?.label||''}  ·  ${PAGES.indexOf(sp.right)+1}/${PAGES.length}`;
+  $btnBack.disabled=(idx===0);
+  $btnFwd.disabled=(idx===SPREADS.length-1);
+  buildDots(idx);
+}
+
+const MAX_DOTS=14,DOT_PX=14;
+function buildDots(active){
+  $dots.innerHTML='';
+  SPREADS.forEach((_,i)=>{
+    const d=document.createElement('div');
+    d.className='dot'+(i===active?' on':Math.abs(i-active)===1?' near':'');
+    d.onclick=()=>{if(!busy&&i!==cur)jumpTo(i);};
     $dots.appendChild(d);
   });
-}
-
-function updateDots(active) {
-  const all = $dots.querySelectorAll('.dot');
-  all.forEach((d, i) => {
-    d.className = 'dot' + (i === active ? ' on' : Math.abs(i - active) === 1 ? ' near' : '');
-  });
-  if (PAGES.length > MAX_VIS) {
-    const offset = Math.max(0, Math.min(active - Math.floor(MAX_VIS / 2), PAGES.length - MAX_VIS));
-    $dots.style.transform = `translateX(${-offset * DOT_PX}px)`;
+  if(SPREADS.length>MAX_DOTS){
+    const off=Math.max(0,Math.min(active-Math.floor(MAX_DOTS/2),SPREADS.length-MAX_DOTS));
+    $dots.style.transform=`translateX(${-off*DOT_PX}px)`;
   }
 }
 
-/* ── JUMP (dots + search) ─────────────────────────── */
-function jumpTo(i) {
-  if (busy || i === cur) return;
-  cur = i; render(cur);
+/* OPEN ANIMATION: single → spread */
+function animateOpen(onDone){
+  const{bW:halfW,bH}=calcSize(true);
+  const{bW:fullW}=calcSize(false);
+  /* snap to start state */
+  $book.style.transition='none';
+  $book.style.width=halfW+'px';
+  $book.style.marginLeft=Math.round((fullW-halfW)/2)+'px';
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    $book.style.transition='width .55s cubic-bezier(.4,0,.2,1), margin-left .55s cubic-bezier(.4,0,.2,1)';
+    $book.style.width=fullW+'px';
+    $book.style.marginLeft='0';
+    setTimeout(()=>{$book.style.transition='';onDone();},570);
+  }));
 }
 
-/* ── SEARCH / GO TO PAGE ──────────────────────────── */
-function goToPage() {
-  const val = parseInt(document.getElementById('search-input').value, 10);
-  document.getElementById('search-input').value = '';
-  document.getElementById('search-input').blur();
-  if (isNaN(val) || val < 1 || val > PAGES.length) {
-    showToast(`أدخل رقماً بين 1 و ${PAGES.length}`);
+/* CLOSE ANIMATION: spread → single */
+function animateClose(onDone){
+  const{bW:halfW}=calcSize(true);
+  const{bW:fullW}=calcSize(false);
+  $book.style.transition='width .5s cubic-bezier(.4,0,.2,1), margin-left .5s cubic-bezier(.4,0,.2,1)';
+  $book.style.width=halfW+'px';
+  $book.style.marginLeft=Math.round((fullW-halfW)/2)+'px';
+  setTimeout(()=>{$book.style.transition='';onDone();},520);
+}
+
+/* FLIP ENGINE */
+const FLIP_MS=420;
+const ease=t=>t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2;
+
+function turn(dir){
+  if(busy)return;
+  const next=cur+dir;
+  if(next<0||next>=SPREADS.length)return;
+  busy=true;
+  const curSp=SPREADS[cur],nextSp=SPREADS[next];
+
+  /* cover → first spread */
+  if(curSp.type==='cover'&&dir>0){
+    isSingle=false;
+    $book.classList.remove('cover-mode');
+    $pgL.style.backgroundImage=bg(nextSp.left?.src);
+    $pgR.style.backgroundImage=bg(nextSp.right?.src);
+    animateOpen(()=>{cur=next;render(cur);busy=false;});
     return;
   }
-  jumpTo(val - 1);
-}
 
-function showToast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 2200);
-}
+  /* spread → back cover */
+  if(nextSp.type==='back'&&dir>0){
+    isSingle=true;
+    $pgR.style.backgroundImage=bg(nextSp.right?.src);
+    $book.classList.add('cover-mode');
+    animateClose(()=>{cur=next;render(cur);busy=false;});
+    return;
+  }
 
-/* ── FLIP ANIMATION ───────────────────────────────── */
-/*
-  RTL FLIP — how it works:
-  ─────────────────────────────────────────────────────
-  Each image is the FULL spread (left + right pages together).
+  /* back cover → previous spread */
+  if(curSp.type==='back'&&dir<0){
+    isSingle=false;
+    $book.classList.remove('cover-mode');
+    $pgR.style.backgroundImage=bg(nextSp.right?.src);
+    $pgL.style.backgroundImage=bg(nextSp.left?.src);
+    animateOpen(()=>{cur=next;render(cur);busy=false;});
+    return;
+  }
 
-  The flipper covers the RIGHT HALF of the book.
-  Hinge is on the RIGHT edge → transform-origin: right center.
+  /* normal spread flip
+     RTL Arabic: LEFT page peels rightward from centre spine.
+     Flipper covers LEFT half, hinge = right edge (centre spine).
+     FORWARD: rotateY 0 → -180 (peels toward right)
+     BACKWARD: rotateY 0 → +180
+  */
+  const halfW=Math.round($book.offsetWidth/2);
 
-  To show only the right half of an image in a half-width div:
-    background-size: 200% 100%    (stretches the image to 2× width)
-    background-position: 100% 50% (shows the right side = right page)
+  /* update static pages immediately */
+  $pgR.style.backgroundImage=bg(nextSp.right?.src);
+  $pgL.style.backgroundImage=bg(nextSp.left?.src);
 
-  FRONT face (#ff): right half of the CURRENT image (peeling away)
-  BACK  face (#fb): right half of the NEXT image
-    — but #fb has rotateY(180deg) as a base transform, so its
-      background appears mirrored. We correct this with
-      background-position: 0% 50% on #fb (left half of image,
-      which after the Y-mirror maps correctly to the right half visually).
+  /* flipper faces */
+  $ff.style.backgroundImage=bg(curSp.left?.src);
+  $fb.style.backgroundImage=bg(dir>0?nextSp.right?.src:nextSp.left?.src);
+  $ff.style.transform='rotateY(0deg)';
+  $fb.style.transform='rotateY(180deg)';
 
-  FORWARD turn (dir +1):  rotateY 0 → +180  (peel toward left, RTL)
-  BACKWARD turn (dir -1): rotateY 0 → -180  (peel back to right)
-*/
-const FLIP_MS = 400;
-const ease = t => t < 0.5 ? 2*t*t : 1 - Math.pow(-2*t+2, 2)/2;
+  $flipper.style.cssText=
+    `left:0;top:0;width:${halfW}px;height:100%;`+
+    `transform-origin:right center;display:block;transform:rotateY(0deg);`;
 
-function turn(dir) {
-  if (busy) return;
-  const next = cur + dir;
-  if (next < 0 || next >= PAGES.length) return;
-  busy = true;
-
-  const W    = document.getElementById('book').offsetWidth;
-  const half = Math.floor(W / 2);
-
-  /* set flipper dimensions and hinge */
-  $flipper.style.cssText =
-    `width:${half}px; right:0; left:auto; top:0; height:100%;` +
-    `transform-origin: right center;` +
-    `display:block; transform:rotateY(0deg);` +
-    `border-radius:0 4px 4px 0;`;
-
-  /* front face: right half of CURRENT image */
-  $ff.style.backgroundImage    = `url('${PAGES[cur].src}')`;
-  $ff.style.backgroundSize     = '200% 100%';
-  $ff.style.backgroundPosition = '100% 50%';
-  $ff.style.transform          = 'rotateY(0deg)'; /* no base flip */
-  $ff.style.backfaceVisibility = 'hidden';
-
-  /* back face: right half of NEXT image
-     Because rotateY(180deg) mirrors horizontally,
-     we use background-position: 0% to show left half of image
-     which maps correctly after the mirror */
-  $fb.style.backgroundImage    = `url('${PAGES[next].src}')`;
-  $fb.style.backgroundSize     = '200% 100%';
-  $fb.style.backgroundPosition = '0% 50%';
-  $fb.style.transform          = 'rotateY(180deg)';
-  $fb.style.backfaceVisibility = 'hidden';
-
-  /* switch static spread to destination immediately
-     (left half is already correct; flipper covers the right half) */
-  $spread.style.backgroundImage    = `url('${PAGES[next].src}')`;
-  $spread.style.backgroundSize     = 'cover';
-  $spread.style.backgroundPosition = 'center';
-
-  const targetDeg = dir > 0 ? 180 : -180;
-  let start = null;
-
-  function step(ts) {
-    if (!start) start = ts;
-    const p    = Math.min((ts - start) / FLIP_MS, 1);
-    const e    = ease(p);
-    const deg  = targetDeg * e;
-    const shad = Math.sin(p * Math.PI);
-    $flipper.style.transform = `rotateY(${deg}deg)`;
-    $flipper.style.filter    = `brightness(${1 - shad * 0.44}) contrast(${1 + shad * 0.07})`;
-    if (p < 1) {
-      requestAnimationFrame(step);
-    } else {
-      $flipper.style.display = 'none';
-      cur = next;
-      render(cur);
-      busy = false;
-    }
+  const target=dir>0?-180:180;
+  let start=null;
+  function step(ts){
+    if(!start)start=ts;
+    const p=Math.min((ts-start)/FLIP_MS,1);
+    const e=ease(p);
+    const shad=Math.sin(p*Math.PI);
+    $flipper.style.transform=`rotateY(${target*e}deg)`;
+    $flipper.style.filter=`brightness(${1-shad*.44}) contrast(${1+shad*.06})`;
+    if(p<1){requestAnimationFrame(step);}
+    else{$flipper.style.display='none';cur=next;render(cur);busy=false;}
   }
   requestAnimationFrame(step);
 }
 
-/* ── SWIPE ────────────────────────────────────────── */
-/* RTL: swipe RIGHT (+dx) = forward, swipe LEFT (-dx) = back */
-let tx = 0, ty = 0, sw = false;
-document.addEventListener('touchstart', e => { tx = e.touches[0].clientX; ty = e.touches[0].clientY; sw = true; }, { passive: true });
-document.addEventListener('touchend',   e => {
-  if (!sw) return; sw = false;
-  const dx = e.changedTouches[0].clientX - tx;
-  const dy = e.changedTouches[0].clientY - ty;
-  if (Math.abs(dx) > 42 && Math.abs(dx) > Math.abs(dy) * 1.3) turn(dx > 0 ? 1 : -1);
-}, { passive: true });
+/* JUMP */
+function jumpTo(idx){
+  if(busy||idx===cur)return;
+  cur=idx;isSingle=(SPREADS[idx].type!=='spread');
+  render(cur);
+}
 
-/* ── KEYBOARD ─────────────────────────────────────── */
-document.addEventListener('keydown', e => {
-  if (e.target === document.getElementById('search-input')) return;
-  if (e.key === 'ArrowLeft'  || e.key === 'ArrowDown')  turn(1);
-  if (e.key === 'ArrowRight' || e.key === 'ArrowUp')    turn(-1);
-  if (e.key === 'f' || e.key === 'F') toggleFS();
+/* SEARCH */
+function goToPage(){
+  const val=parseInt(document.getElementById('search-input').value,10);
+  document.getElementById('search-input').value='';
+  document.getElementById('search-input').blur();
+  if(isNaN(val)||val<1||val>PAGES.length){showToast('أدخل رقماً بين 1 و '+PAGES.length);return;}
+  const pi=val-1;
+  let target=0;
+  for(let i=0;i<SPREADS.length;i++){
+    const sp=SPREADS[i];
+    if(PAGES.indexOf(sp.right)===pi||PAGES.indexOf(sp.left)===pi){target=i;break;}
+  }
+  jumpTo(target);
+}
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2200);
+}
+
+/* SWIPE - RTL: right=next, left=back */
+let tx=0,ty=0,sw=false;
+document.addEventListener('touchstart',e=>{tx=e.touches[0].clientX;ty=e.touches[0].clientY;sw=true;},{passive:true});
+document.addEventListener('touchend',e=>{
+  if(!sw)return;sw=false;
+  const dx=e.changedTouches[0].clientX-tx,dy=e.changedTouches[0].clientY-ty;
+  if(Math.abs(dx)>42&&Math.abs(dx)>Math.abs(dy)*1.3)turn(dx>0?1:-1);
+},{passive:true});
+
+/* KEYBOARD - RTL: left/down=next, right/up=back */
+document.addEventListener('keydown',e=>{
+  if(e.target===document.getElementById('search-input'))return;
+  if(e.key==='ArrowLeft'||e.key==='ArrowDown')turn(1);
+  if(e.key==='ArrowRight'||e.key==='ArrowUp')turn(-1);
+  if(e.key==='f'||e.key==='F')toggleFS();
 });
 
-/* ── FULLSCREEN ───────────────────────────────────── */
-function toggleFS() {
-  const el = document.documentElement;
-  const in_ = document.fullscreenElement || document.webkitFullscreenElement;
-  if (!in_) (el.requestFullscreen || el.webkitRequestFullscreen || function(){}).call(el);
-  else      (document.exitFullscreen || document.webkitExitFullscreen || function(){}).call(document);
+/* FULLSCREEN */
+function toggleFS(){
+  const el=document.documentElement,inFS=document.fullscreenElement||document.webkitFullscreenElement;
+  if(!inFS)(el.requestFullscreen||el.webkitRequestFullscreen||function(){}).call(el);
+  else(document.exitFullscreen||document.webkitExitFullscreen||function(){}).call(document);
 }
-['fullscreenchange','webkitfullscreenchange'].forEach(ev =>
-  document.addEventListener(ev, () => {
-    const in_ = document.fullscreenElement || document.webkitFullscreenElement;
-    document.getElementById('fs-label').textContent = in_ ? 'Exit' : 'Full';
+['fullscreenchange','webkitfullscreenchange'].forEach(ev=>
+  document.addEventListener(ev,()=>{
+    const inFS=document.fullscreenElement||document.webkitFullscreenElement;
+    document.getElementById('fs-label').textContent=inFS?'Exit':'Full';
   })
 );
 
-/* ── HOW-TO ───────────────────────────────────────── */
-function closeHowTo() {
+/* HOW-TO */
+function closeHowTo(){
   document.getElementById('howto').classList.remove('show');
-  try { localStorage.setItem('wg_seen','1'); } catch(e) {}
+  try{localStorage.setItem('wg_seen','1');}catch(e){}
 }
 
-/* ── INIT ─────────────────────────────────────────── */
-buildDots();
+/* INIT */
+applySize(true);
 render(0);
-preload(1); preload(2);
+preload(PAGES[1]?.src);
+preload(PAGES[2]?.src);
 
-window.addEventListener('load', () => {
-  setTimeout(() => {
+window.addEventListener('load',()=>{
+  setTimeout(()=>{
     document.getElementById('loader').classList.add('fade');
-    setTimeout(() => {
+    setTimeout(()=>{
       document.getElementById('loader').remove();
-      try { if (!localStorage.getItem('wg_seen')) document.getElementById('howto').classList.add('show'); } catch(e) {}
-    }, 700);
-  }, 1000);
+      try{if(!localStorage.getItem('wg_seen'))document.getElementById('howto').classList.add('show');}catch(e){}
+    },700);
+  },1000);
 });
 </script>
 </body>
