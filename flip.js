@@ -508,7 +508,6 @@
     { src: 'pages/pg1.jpg',  label: 'Cover' },
     { src: 'pages/pg2.jpg',  label: 'Page 2' },
     { src: 'pages/pg3.jpg',  label: 'Page 3' },
-    /* UNCOMMENT YOUR PAGES — all 40 are ready:
     { src: 'pages/pg4.jpg',  label: 'Page 4' },
     { src: 'pages/pg5.jpg',  label: 'Page 5' },
     { src: 'pages/pg6.jpg',  label: 'Page 6' },
@@ -546,7 +545,7 @@
     { src: 'pages/pg38.jpg', label: 'Page 38' },
     { src: 'pages/pg39.jpg', label: 'Page 39' },
     { src: 'pages/pg40.jpg', label: 'Back Cover' },
-    */
+  
   ];
 
   /* ── DOM REFS ──────────────────────────────────────────────── */
