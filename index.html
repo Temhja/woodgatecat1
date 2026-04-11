@@ -6,78 +6,73 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="theme-color" content="#0d0d0d">
-  <title>WoodGate — Catalog 2026</title>
+  <meta name="theme-color" content="#0a0a0a">
+  <title>WoodGate — Catalog 2025</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<!-- ══════════════════════════════════════════════════════════
+<!-- ═══════════════════════════════════════════════════════════
      LOADER
-     ══════════════════════════════════════════════════════════ -->
+════════════════════════════════════════════════════════════ -->
 <div id="loader">
-  <div class="l-box">
-    <svg viewBox="0 0 26 26" fill="none" width="28" height="28">
-      <rect x="2"  y="2"  width="10" height="10" rx="1.5" stroke="#d4a017" stroke-width="1.5"/>
-      <rect x="14" y="2"  width="10" height="10" rx="1.5" stroke="#d4a017" stroke-width="1.5"/>
-      <rect x="2"  y="14" width="10" height="10" rx="1.5" stroke="#d4a017" stroke-width="1.5"/>
-      <rect x="14" y="14" width="10" height="10" rx="1.5" stroke="#d4a017" stroke-width="1.5"/>
+  <div class="l-icon">
+    <svg viewBox="0 0 26 26" fill="none" width="30" height="30">
+      <rect x="2"  y="2"  width="10" height="10" rx="1.5" stroke="#d4a017" stroke-width="1.6"/>
+      <rect x="14" y="2"  width="10" height="10" rx="1.5" stroke="#d4a017" stroke-width="1.6"/>
+      <rect x="2"  y="14" width="10" height="10" rx="1.5" stroke="#d4a017" stroke-width="1.6"/>
+      <rect x="14" y="14" width="10" height="10" rx="1.5" stroke="#d4a017" stroke-width="1.6"/>
     </svg>
   </div>
   <div class="l-name">WoodGate</div>
-  <div class="l-sub">Catalog 2026</div>
+  <div class="l-sub">Catalog 2025</div>
   <div class="l-bar-track">
     <div class="l-bar-fill"></div>
   </div>
 </div>
 
-<!-- ══════════════════════════════════════════════════════════
+<!-- ═══════════════════════════════════════════════════════════
      HOW-TO OVERLAY
-     ══════════════════════════════════════════════════════════ -->
+════════════════════════════════════════════════════════════ -->
 <div id="howto">
   <div class="hw-card">
-    <div class="hw-logo">
-      <div class="l-box" style="width:42px;height:42px;">
-        <svg viewBox="0 0 26 26" fill="none" width="24" height="24">
-          <rect x="2"  y="2"  width="10" height="10" rx="1.5" stroke="#d4a017" stroke-width="1.5"/>
-          <rect x="14" y="2"  width="10" height="10" rx="1.5" stroke="#d4a017" stroke-width="1.5"/>
-          <rect x="2"  y="14" width="10" height="10" rx="1.5" stroke="#d4a017" stroke-width="1.5"/>
-          <rect x="14" y="14" width="10" height="10" rx="1.5" stroke="#d4a017" stroke-width="1.5"/>
-        </svg>
-      </div>
+    <div class="l-icon" style="width:44px;height:44px;">
+      <svg viewBox="0 0 26 26" fill="none" width="26" height="26">
+        <rect x="2"  y="2"  width="10" height="10" rx="1.5" stroke="#d4a017" stroke-width="1.6"/>
+        <rect x="14" y="2"  width="10" height="10" rx="1.5" stroke="#d4a017" stroke-width="1.6"/>
+        <rect x="2"  y="14" width="10" height="10" rx="1.5" stroke="#d4a017" stroke-width="1.6"/>
+        <rect x="14" y="14" width="10" height="10" rx="1.5" stroke="#d4a017" stroke-width="1.6"/>
+      </svg>
     </div>
     <div class="hw-title">WoodGate <span>Catalog</span></div>
-    <div class="hw-divider"></div>
+    <div class="hw-sep"></div>
     <div class="hw-body">
       اسحب يميناً للصفحة التالية<br>
       اسحب يساراً للعودة للخلف<br>
-      اضغط على الأسهم للتنقل<br>
+      اضغط الأسهم أو النقاط للتنقل<br>
       أدخل رقم الصفحة للانتقال المباشر
     </div>
-    <button class="hw-btn" onclick="closeHowTo()">ابدأ التصفح</button>
+    <button class="hw-btn" id="hw-close">ابدأ التصفح</button>
   </div>
 </div>
 
-<!-- ══════════════════════════════════════════════════════════
-     TOAST
-     ══════════════════════════════════════════════════════════ -->
+<!-- TOAST -->
 <div id="toast"></div>
 
-<!-- ══════════════════════════════════════════════════════════
+<!-- ═══════════════════════════════════════════════════════════
      APP
-     ══════════════════════════════════════════════════════════ -->
+════════════════════════════════════════════════════════════ -->
 <div id="app">
 
-  <!-- BACKGROUND (bg.jpg or gold glow fallback) -->
-  <div id="bg"></div>
+  <!-- Background layer (bg.jpg or gold glow) -->
+  <div id="bg-layer"></div>
 
-  <!-- TOP BAR -->
+  <!-- ── TOP BAR ─────────────────────────────────────────── -->
   <div id="topbar">
 
-    <!-- Brand -->
     <div id="brand">
-      <div class="b-mark">
-        <svg viewBox="0 0 22 22" fill="none">
+      <div class="bmark">
+        <svg viewBox="0 0 22 22" fill="none" width="18" height="18">
           <rect x="2"  y="2"  width="8" height="8" rx="1" stroke="#d4a017" stroke-width="1.5"/>
           <rect x="12" y="2"  width="8" height="8" rx="1" stroke="#d4a017" stroke-width="1.5"/>
           <rect x="2"  y="12" width="8" height="8" rx="1" stroke="#d4a017" stroke-width="1.5"/>
@@ -85,103 +80,94 @@
         </svg>
       </div>
       <div>
-        <div class="b-name">WoodGate</div>
-        <div class="b-sub">Kitchen Doors</div>
+        <div class="bname">WoodGate</div>
+        <div class="bsub">Kitchen Doors</div>
       </div>
     </div>
 
-    <!-- Page Search -->
     <div id="search-wrap">
-      <span class="s-icon">
-        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-          <circle cx="5" cy="5" r="3.5" stroke="currentColor" stroke-width="1.2"/>
-          <path d="M8 8L10.5 10.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
-        </svg>
-      </span>
-      <input
-        id="search-input"
-        type="number"
-        min="1"
+      <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+        <circle cx="5" cy="5" r="3.5" stroke="currentColor" stroke-width="1.2"/>
+        <path d="M8 8L10.5 10.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+      </svg>
+      <input id="search-input" type="number" min="1" max="170"
         placeholder="Go to page…"
-        onkeydown="if(event.key==='Enter') goToPage()"
-        oninput="this.value=this.value.replace(/[^0-9]/g,'')">
-      <button id="search-go" onclick="goToPage()">Go</button>
+        inputmode="numeric"
+        autocomplete="off">
+      <button id="search-go">Go</button>
     </div>
 
-    <!-- Fullscreen -->
-    <button id="fs-btn" onclick="toggleFS()">
+    <button id="fs-btn" onclick="WG.toggleFS()">
       <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
         <path d="M1.5 4V1.5H4M8 1.5H10.5V4M10.5 8V10.5H8M4 10.5H1.5V8"
-          stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+          stroke="currentColor" stroke-width="1.2"
+          stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
       <span id="fs-label">Full</span>
     </button>
 
-  </div><!-- /topbar -->
+  </div>
 
-  <!-- STAGE -->
+  <!-- ── STAGE ───────────────────────────────────────────── -->
   <div id="stage">
     <div id="book-scene">
       <div id="book">
 
-        <!-- Static page layers (back to front) -->
-        <div class="page-layer" id="page-prev"></div>
-        <div class="page-layer" id="page-next"></div>
-        <div class="page-layer" id="page-curr"></div>
+        <!-- Static page layers -->
+        <div class="pg-layer" id="pg-under"></div>
+        <div class="pg-layer" id="pg-curr"></div>
 
-        <!-- Fold shadow (rendered behind flipper) -->
-        <div id="fold-shadow"></div>
-
-        <!-- Flipper (animated 3D card) -->
+        <!-- Flipper — the hard-flip card -->
         <div id="flipper">
           <div class="flip-face" id="flip-front"></div>
           <div class="flip-face" id="flip-back"></div>
         </div>
 
-      </div><!-- /book -->
-    </div><!-- /book-scene -->
-  </div><!-- /stage -->
+      </div>
+    </div>
+  </div>
 
-  <!-- BOTTOM BAR -->
+  <!-- ── BOTTOM BAR ──────────────────────────────────────── -->
   <div id="bottombar">
 
     <!--
       RTL navigation:
-      LEFT arrow  = BACK  (previous page)
-      RIGHT arrow = FORWARD (next page)
+      LEFT  chevron = BACK  (previous page in Arabic = right direction)
+      RIGHT chevron = NEXT  (forward in Arabic = left direction)
+      Arrows are intentionally swapped vs LTR to match RTL reading.
     -->
-    <button class="ctrl" id="btn-back" disabled aria-label="Previous page">
+    <button class="ctrl" id="btn-back" disabled>
       <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
         <path d="M9 2.5L4 7L9 11.5"
-          stroke="currentColor" stroke-width="1.8"
+          stroke="currentColor" stroke-width="1.9"
           stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
     </button>
 
-    <div id="nav-center">
-      <div id="dots-outer">
-        <div id="dots"></div>
+    <div id="nav-centre">
+      <div id="dots-clip">
+        <div id="dots-track"></div>
       </div>
-      <div id="counter">1 / —</div>
+      <div id="counter">1 / 170</div>
     </div>
 
-    <button class="ctrl" id="btn-fwd" aria-label="Next page">
+    <button class="ctrl" id="btn-fwd">
       <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
         <path d="M5 2.5L10 7L5 11.5"
-          stroke="currentColor" stroke-width="1.8"
+          stroke="currentColor" stroke-width="1.9"
           stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
     </button>
 
-  </div><!-- /bottombar -->
+  </div>
 
-  <div id="hint">Swipe right = next &nbsp;·&nbsp; Swipe left = back</div>
+  <div id="swipe-hint">Swipe right = next &nbsp;·&nbsp; Swipe left = back</div>
 
-</div><!-- /app -->
+</div>
 
-<!-- ══════════════════════════════════════════════════════════
+<!-- ═══════════════════════════════════════════════════════════
      SCRIPTS
-     ══════════════════════════════════════════════════════════ -->
+════════════════════════════════════════════════════════════ -->
 <script src="flip.js"></script>
 
 </body>

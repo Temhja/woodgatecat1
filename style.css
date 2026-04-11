@@ -1,49 +1,51 @@
-/* ═══════════════════════════════════════════════════════════════
-   WoodGate Flipbook — style.css
-   ═══════════════════════════════════════════════════════════════ */
+/* ============================================================
+   WoodGate Catalog — style.css
+   Hard Flip · Cinematic · Dark Premium
+   ============================================================ */
 
-/* ── RESET ───────────────────────────────────────────────────── */
+/* ── RESET ───────────────────────────────────────────────── */
 *, *::before, *::after {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
   -webkit-tap-highlight-color: transparent;
   -webkit-touch-callout: none;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
-/* ── TOKENS ──────────────────────────────────────────────────── */
+/* ── TOKENS ──────────────────────────────────────────────── */
 :root {
   --gold:        #d4a017;
-  --gold2:       #f5c842;
-  --gold-glow:   rgba(212, 160, 23, 0.45);
-  --gold-border: rgba(212, 160, 23, 0.25);
-  --bg:          #0d0d0d;
-  --surface:     #161616;
-  --surface2:    #1f1f1f;
+  --gold-hi:     #f5c842;
+  --gold-dim:    rgba(212,160,23,0.22);
+  --gold-glow:   rgba(212,160,23,0.40);
+  --bg:          #0a0a0a;
+  --surface:     #141414;
+  --surface2:    #1c1c1c;
   --white:       #ffffff;
-  --w80:         rgba(255,255,255,0.80);
-  --w50:         rgba(255,255,255,0.50);
-  --w25:         rgba(255,255,255,0.25);
-  --w10:         rgba(255,255,255,0.10);
-  --w06:         rgba(255,255,255,0.06);
-  --border:      rgba(255,255,255,0.12);
-  --radius:      10px;
-  --bar-h:       54px;
-  --flip-ms:     480;
+  --w90:         rgba(255,255,255,0.90);
+  --w60:         rgba(255,255,255,0.60);
+  --w30:         rgba(255,255,255,0.30);
+  --w12:         rgba(255,255,255,0.12);
+  --w07:         rgba(255,255,255,0.07);
+  --border:      rgba(255,255,255,0.11);
+  --bar:         52px;
 }
 
-/* ── BASE ────────────────────────────────────────────────────── */
+/* ── BASE ────────────────────────────────────────────────── */
 html, body {
   width: 100%;
   height: 100%;
   overflow: hidden;
   background: var(--bg);
-  font-family: -apple-system, 'Segoe UI', 'Helvetica Neue', sans-serif;
+  font-family: -apple-system, 'SF Pro Display', 'Segoe UI', sans-serif;
   color: var(--white);
   -webkit-font-smoothing: antialiased;
+  touch-action: none;
 }
 
-/* ── APP SHELL ───────────────────────────────────────────────── */
+/* ── APP ─────────────────────────────────────────────────── */
 #app {
   width: 100%;
   height: 100%;
@@ -54,47 +56,47 @@ html, body {
   overflow: hidden;
 }
 
-/* ── BACKGROUND ──────────────────────────────────────────────── */
+/* ── BACKGROUND ──────────────────────────────────────────── */
 /*
-  bg.jpg sits behind everything.
-  If bg.jpg doesn't exist, falls back to the radial gold glow.
-  Place your bg.jpg (or dark branded image) in the root folder.
+  bg.jpg: place any dark image (logo, texture, pattern) in the
+  root folder. It will be detected and shown dimmed behind the book.
+  Without bg.jpg a subtle gold-glow gradient is used instead.
 */
-#bg {
+#bg-layer {
   position: absolute;
   inset: 0;
   z-index: 0;
+  pointer-events: none;
+  /* default: dark gold radial glow */
   background:
-    radial-gradient(ellipse 80% 60% at 15% 20%, rgba(212,160,23,0.07) 0%, transparent 60%),
-    radial-gradient(ellipse 60% 50% at 85% 80%, rgba(212,160,23,0.05) 0%, transparent 60%),
+    radial-gradient(ellipse 70% 55% at 10% 15%, rgba(212,160,23,0.06) 0%, transparent 65%),
+    radial-gradient(ellipse 55% 45% at 90% 85%, rgba(212,160,23,0.04) 0%, transparent 60%),
     var(--bg);
-  background-size: cover;
-  background-position: center;
-  transition: opacity 0.6s;
 }
-#bg.has-image {
-  background-image:
-    linear-gradient(rgba(0,0,0,0.72), rgba(0,0,0,0.72)),
-    url('bg.jpg');
+#bg-layer.with-image {
+  background-image: url('bg.jpg');
   background-size: cover;
   background-position: center;
+  /* dark overlay so book pops */
+  filter: brightness(0.28) saturate(0.6);
 }
 
-/* ── TOP BAR ─────────────────────────────────────────────────── */
+/* ── TOP BAR ─────────────────────────────────────────────── */
 #topbar {
+  position: relative;
+  z-index: 100;
   width: 100%;
-  height: var(--bar-h);
+  height: var(--bar);
   flex-shrink: 0;
-  z-index: 200;
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: 10px;
   padding: 0 14px;
-  background: rgba(13,13,13,0.95);
-  border-bottom: 1px solid var(--gold-border);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  background: rgba(10,10,10,0.96);
+  border-bottom: 1px solid var(--gold-dim);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  direction: ltr;
 }
 
 /* brand */
@@ -103,8 +105,9 @@ html, body {
   align-items: center;
   gap: 9px;
   flex-shrink: 0;
+  text-decoration: none;
 }
-.b-mark {
+.bmark {
   width: 32px;
   height: 32px;
   border: 1.5px solid var(--gold);
@@ -114,275 +117,290 @@ html, body {
   justify-content: center;
   flex-shrink: 0;
 }
-.b-mark svg { width: 18px; height: 18px; }
-.b-name {
-  font-size: clamp(13px, 3.2vw, 17px);
+.bname {
+  font-size: clamp(12px, 3vw, 16px);
   font-weight: 700;
-  letter-spacing: 2.5px;
+  letter-spacing: 3px;
   color: var(--white);
   text-transform: uppercase;
   line-height: 1.1;
 }
-.b-sub {
-  font-size: 9px;
+.bsub {
+  font-size: 8px;
   letter-spacing: 2.5px;
-  color: var(--w50);
+  color: var(--w60);
   text-transform: uppercase;
-  margin-top: 1px;
 }
 
 /* search */
 #search-wrap {
   flex: 1;
-  max-width: 190px;
+  max-width: 185px;
   position: relative;
   display: flex;
   align-items: center;
 }
-.s-icon {
+#search-wrap svg {
   position: absolute;
   left: 9px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: var(--w25);
+  color: var(--w30);
   pointer-events: none;
-  display: flex;
 }
 #search-input {
   width: 100%;
-  background: var(--w06);
+  background: var(--w07);
   border: 1px solid var(--border);
   border-radius: 8px;
-  padding: 7px 38px 7px 28px;
+  padding: 7px 40px 7px 28px;
   color: var(--white);
   font-size: 12px;
   outline: none;
   direction: ltr;
   text-align: center;
   -webkit-appearance: none;
+  user-select: text;
+  -webkit-user-select: text;
   transition: border-color 0.2s, box-shadow 0.2s;
 }
-#search-input::placeholder { color: var(--w25); }
+#search-input::placeholder { color: var(--w30); }
 #search-input:focus {
-  border-color: rgba(212,160,23,0.6);
-  box-shadow: 0 0 0 3px rgba(212,160,23,0.12);
+  border-color: rgba(212,160,23,0.55);
+  box-shadow: 0 0 0 3px rgba(212,160,23,0.10);
 }
 #search-input::-webkit-inner-spin-button,
 #search-input::-webkit-outer-spin-button { -webkit-appearance: none; }
 #search-go {
   position: absolute;
   right: 5px;
-  top: 50%;
-  transform: translateY(-50%);
   background: var(--gold);
   border: none;
   border-radius: 5px;
-  padding: 3px 8px;
+  padding: 4px 8px;
   font-size: 10px;
   font-weight: 700;
   color: #000;
   cursor: pointer;
   letter-spacing: 0.5px;
-  touch-action: manipulation;
-  transition: opacity 0.15s, transform 0.15s;
+  transition: opacity 0.15s, transform 0.1s;
 }
-#search-go:active { opacity: 0.8; transform: translateY(-50%) scale(0.94); }
+#search-go:active { opacity: 0.8; transform: scale(0.93); }
 
 /* fullscreen */
 #fs-btn {
-  background: var(--w06);
+  background: var(--w07);
   border: 1px solid var(--border);
   border-radius: 7px;
   padding: 7px 10px;
   cursor: pointer;
-  color: var(--w80);
+  color: var(--w90);
   display: flex;
   align-items: center;
   gap: 5px;
   font-size: 10px;
   letter-spacing: 1px;
-  touch-action: manipulation;
   flex-shrink: 0;
   white-space: nowrap;
-  transition: all 0.2s;
+  transition: background 0.2s;
 }
-#fs-btn:active { background: var(--w10); transform: scale(0.95); }
+#fs-btn:active { background: var(--w12); transform: scale(0.95); }
 
-/* ── STAGE ───────────────────────────────────────────────────── */
+/* ── STAGE ───────────────────────────────────────────────── */
 #stage {
   flex: 1;
   width: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 12px 10px 6px;
+  padding: 10px;
   position: relative;
   z-index: 1;
 }
 
-/* ── BOOK CONTAINER ──────────────────────────────────────────── */
+/* ── BOOK ────────────────────────────────────────────────── */
 #book-scene {
   position: relative;
-  /* sized by JS to maintain page aspect ratio */
+  /* size set by JS */
 }
 
 #book {
   position: relative;
-  border-radius: 4px;
-  transform-style: preserve-3d;
-  /* 3D tilt set by JS on drag */
+  border-radius: 3px;
+  perspective: 1800px;
+  /* shadow: deep and cinematic */
   box-shadow:
-    0 0 0 1px rgba(212,160,23,0.18),
-    0 32px 100px rgba(0,0,0,0.98),
-    0 8px 24px  rgba(0,0,0,0.8);
-  transition: box-shadow 0.4s;
+    0 0 0 1px rgba(212,160,23,0.15),
+    0 2px 0 rgba(212,160,23,0.08) inset,
+    0 40px 120px rgba(0,0,0,1),
+    0 10px 30px rgba(0,0,0,0.9),
+    0 2px 6px rgba(0,0,0,0.8);
   cursor: grab;
-  user-select: none;
-  -webkit-user-select: none;
 }
 #book:active { cursor: grabbing; }
 
-/* ── PAGE LAYERS ─────────────────────────────────────────────── */
-/* Each page is absolutely positioned, full size */
-.page-layer {
+/* ground shadow */
+#book::after {
+  content: '';
   position: absolute;
-  inset: 0;
-  border-radius: 4px;
-  background: #111 center / cover no-repeat;
-  overflow: hidden;
-  /* progressive blur-up: images start blurred and sharpen on load */
-}
-.page-layer.loading {
-  filter: blur(8px);
-  transform: scale(1.02); /* prevents blur edge bleed */
-}
-.page-layer.loaded {
-  filter: none;
-  transform: scale(1);
-  transition: filter 0.4s ease, transform 0.4s ease;
+  bottom: -20px;
+  left: 8%;
+  width: 84%;
+  height: 22px;
+  background: radial-gradient(ellipse at 50% 0%, rgba(0,0,0,0.85) 0%, transparent 70%);
+  border-radius: 50%;
+  pointer-events: none;
+  transform: scaleY(0.45);
 }
 
-/* edge vignettes for depth */
-.page-layer::after {
+/* ── PAGE LAYERS ─────────────────────────────────────────── */
+.pg-layer {
+  position: absolute;
+  inset: 0;
+  border-radius: 3px;
+  background: #111 center / cover no-repeat;
+  overflow: hidden;
+  will-change: transform;
+}
+
+/* Progressive image load: starts blurred, sharpens on load */
+.pg-layer.img-loading {
+  filter: blur(12px) brightness(0.8);
+  transform: scale(1.03);
+}
+.pg-layer.img-ready {
+  filter: none;
+  transform: scale(1);
+  transition: filter 0.5s cubic-bezier(0.4,0,0.2,1),
+              transform 0.5s cubic-bezier(0.4,0,0.2,1);
+}
+
+/* Page edge vignette for realism */
+.pg-layer::after {
   content: '';
   position: absolute;
   inset: 0;
   pointer-events: none;
-  border-radius: 4px;
   background:
-    linear-gradient(to bottom, rgba(0,0,0,0.18) 0%, transparent 15%),
-    linear-gradient(to top,    rgba(0,0,0,0.22) 0%, transparent 12%),
-    linear-gradient(to right,  rgba(0,0,0,0.12) 0%, transparent 8%),
-    linear-gradient(to left,   rgba(0,0,0,0.12) 0%, transparent 8%);
+    linear-gradient(to right, rgba(0,0,0,0.10) 0%, transparent 6%),
+    linear-gradient(to left,  rgba(0,0,0,0.10) 0%, transparent 6%),
+    linear-gradient(to bottom,rgba(0,0,0,0.15) 0%, transparent 10%),
+    linear-gradient(to top,   rgba(0,0,0,0.20) 0%, transparent 8%);
 }
 
-/* static layers */
-#page-prev { z-index: 1; }   /* page underneath (prev)    */
-#page-next { z-index: 2; }   /* destination page          */
-#page-curr { z-index: 3; }   /* current visible page      */
+#pg-under { z-index: 1; }  /* page revealed beneath  */
+#pg-curr  { z-index: 2; }  /* current visible page   */
 
-/* ── FLIPPER ─────────────────────────────────────────────────── */
+/* ── FLIPPER (Hard Flip) ──────────────────────────────────── */
 /*
-  Full-page flip — each spread is ONE page.
-  The flipper is full-width, same size as the book.
-  RTL: pages turn left → right (hinge on the LEFT edge for forward flip).
+  Hard Flip mechanics:
+  ─────────────────────────────────────────────────────────────
+  The current page is a flat card that rotates on a vertical axis.
+  There is NO curl — the card stays rigid throughout.
+  The reflection/gloss travels across as it turns.
 
-  Hinge LEFT  = peeling rightward  = forward in Arabic book
-  Hinge RIGHT = peeling leftward   = backward
+  RTL Arabic:
+  FORWARD (next page): hinge = LEFT edge, rotate 0 → +180
+  BACKWARD (prev page): hinge = RIGHT edge, rotate 0 → -180
 
-  transform-origin is set dynamically by flip.js.
+  Front face = current page (visible at start)
+  Back  face = next/prev page (revealed as it completes 180°)
+
+  The "hard" quality comes from:
+  1. easeOutBack with strong overshoot (c=2.2) — snaps past then settles
+  2. No brightness dip mid-flip (card doesn't curve toward viewer)
+  3. Instead: a sharp gloss reflection sweeps across the card face
+  4. Very slight scale pulse at the start (card "lifts" before flipping)
 */
 #flipper {
   position: absolute;
   inset: 0;
+  border-radius: 3px;
   transform-style: preserve-3d;
   display: none;
   z-index: 10;
-  border-radius: 4px;
+  will-change: transform;
 }
 
 .flip-face {
   position: absolute;
   inset: 0;
-  border-radius: 4px;
+  border-radius: 3px;
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
   background: #111 center / cover no-repeat;
   overflow: hidden;
 }
-.flip-face::after {
+
+#flip-back {
+  transform: rotateY(180deg);
+}
+
+/* Gloss sweep — a bright stripe that crosses the card during flip */
+.flip-face::before {
   content: '';
   position: absolute;
   inset: 0;
   pointer-events: none;
-  border-radius: 4px;
-  /* curl shadow — animated via opacity by flip.js */
+  z-index: 3;
   background: linear-gradient(
-    to right,
-    rgba(0,0,0,0.55) 0%,
-    rgba(0,0,0,0.18) 20%,
-    transparent 50%
+    105deg,
+    transparent 30%,
+    rgba(255,255,255,0.055) 45%,
+    rgba(255,255,255,0.09)  50%,
+    rgba(255,255,255,0.055) 55%,
+    transparent 70%
   );
   opacity: 0;
-  transition: opacity 0.05s;
+  /* JS animates opacity and background-position */
+  background-size: 200% 100%;
+  background-position: -100% 0;
+  transition: none;
 }
-#flip-back {
-  transform: rotateY(180deg);
-}
-/* curl highlight on leading edge */
-#flip-front::before {
+
+/* Edge shadow on the card (left/right sides during flip) */
+.flip-face::after {
   content: '';
   position: absolute;
-  top: 0; right: 0;
-  width: 18px; height: 100%;
-  background: linear-gradient(to left, rgba(255,255,255,0.06) 0%, transparent 100%);
+  top: 0;
+  width: 32px;
+  height: 100%;
   pointer-events: none;
   z-index: 2;
   opacity: 0;
-  transition: opacity 0.1s;
+}
+#flip-front::after {
+  right: 0;
+  background: linear-gradient(to left, rgba(0,0,0,0.4), transparent);
+}
+#flip-back::after {
+  left: 0;
+  background: linear-gradient(to right, rgba(0,0,0,0.35), transparent);
 }
 
-/* page-curl fold shadow (rendered behind the flipper) */
-#fold-shadow {
-  position: absolute;
-  top: 0; bottom: 0;
-  width: 40px;
-  pointer-events: none;
-  z-index: 9;
-  display: none;
-  background: linear-gradient(
-    to right,
-    rgba(0,0,0,0.0) 0%,
-    rgba(0,0,0,0.35) 40%,
-    rgba(0,0,0,0.55) 60%,
-    rgba(0,0,0,0.25) 80%,
-    transparent 100%
-  );
-}
-
-/* ── BOTTOM BAR ──────────────────────────────────────────────── */
+/* ── BOTTOM BAR ──────────────────────────────────────────── */
 #bottombar {
+  position: relative;
+  z-index: 100;
   width: 100%;
-  height: var(--bar-h);
+  height: var(--bar);
   flex-shrink: 0;
-  z-index: 200;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 14px;
   padding: 0 14px;
-  background: rgba(13,13,13,0.95);
-  border-top: 1px solid var(--gold-border);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  background: rgba(10,10,10,0.96);
+  border-top: 1px solid var(--gold-dim);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  direction: ltr;
 }
 
-/* nav arrows */
+/* arrow buttons */
 .ctrl {
-  width: clamp(36px, 8.5vw, 44px);
-  height: clamp(36px, 8.5vw, 44px);
+  width: clamp(36px, 9vw, 44px);
+  height: clamp(36px, 9vw, 44px);
   border-radius: 50%;
-  background: var(--w06);
+  background: var(--w07);
   border: 1px solid var(--border);
   cursor: pointer;
   color: var(--white);
@@ -390,97 +408,93 @@ html, body {
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  touch-action: manipulation;
-  transition: background 0.15s, border-color 0.15s, box-shadow 0.15s, transform 0.1s;
-  -webkit-user-select: none;
-  user-select: none;
+  transition: background 0.15s, border-color 0.15s, box-shadow 0.15s, transform 0.12s;
 }
-.ctrl:active:not(:disabled) {
-  background: rgba(212,160,23,0.22);
+.ctrl:not(:disabled):active {
+  background: rgba(212,160,23,0.18);
   border-color: var(--gold);
-  box-shadow: 0 0 20px var(--gold-glow);
-  transform: scale(0.88);
+  box-shadow: 0 0 22px var(--gold-glow);
+  transform: scale(0.87);
 }
 .ctrl:disabled { opacity: 0.18; cursor: default; pointer-events: none; }
 
-/* centre nav */
-#nav-center {
+/* nav centre */
+#nav-centre {
+  flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
-  flex: 1;
-  min-width: 0;
+  gap: 5px;
 }
 
-/* dots */
-#dots-outer {
-  max-width: min(52vw, 230px);
+/* dots — sliding window for 170 pages */
+#dots-clip {
+  max-width: min(55vw, 240px);
   overflow: hidden;
   position: relative;
 }
-/* fade edges of dot strip */
-#dots-outer::before,
-#dots-outer::after {
+#dots-clip::before,
+#dots-clip::after {
   content: '';
   position: absolute;
-  top: 0; bottom: 0;
-  width: 16px;
+  top: 0;
+  bottom: 0;
+  width: 18px;
   z-index: 2;
   pointer-events: none;
 }
-#dots-outer::before {
+#dots-clip::before {
   left: 0;
-  background: linear-gradient(to right, rgba(13,13,13,0.9), transparent);
+  background: linear-gradient(to right, rgba(10,10,10,0.95), transparent);
 }
-#dots-outer::after {
+#dots-clip::after {
   right: 0;
-  background: linear-gradient(to left, rgba(13,13,13,0.9), transparent);
+  background: linear-gradient(to left, rgba(10,10,10,0.95), transparent);
 }
-
-#dots {
+#dots-track {
   display: flex;
   gap: 7px;
   align-items: center;
-  transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  padding: 3px 4px;
+  transition: transform 0.4s cubic-bezier(0.4,0,0.2,1);
   will-change: transform;
-  padding: 2px 4px;
 }
 .dot {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
   border-radius: 50%;
   flex-shrink: 0;
   background: rgba(255,255,255,0.18);
-  transition: background 0.25s, transform 0.25s, box-shadow 0.25s;
   cursor: pointer;
-  touch-action: manipulation;
+  transition: background 0.25s, transform 0.25s, box-shadow 0.25s;
 }
-.dot.on {
+.dot.active {
   background: var(--gold);
   box-shadow: 0 0 8px var(--gold-glow);
-  transform: scale(1.6);
+  transform: scale(1.7);
 }
 .dot.near {
-  background: rgba(255,255,255,0.5);
+  background: rgba(255,255,255,0.48);
   transform: scale(1.25);
 }
 
 #counter {
   font-size: clamp(10px, 2.2vw, 12px);
-  color: var(--white);
   font-weight: 500;
-  letter-spacing: 1px;
+  color: var(--white);
+  letter-spacing: 0.8px;
   line-height: 1;
 }
-#hint {
-  font-size: clamp(8px, 1.5vw, 10px);
-  color: var(--w25);
+
+#swipe-hint {
+  font-size: clamp(7px, 1.4vw, 9px);
+  color: var(--w30);
   letter-spacing: 1.5px;
   text-transform: uppercase;
 }
 
-/* ── LOADER ──────────────────────────────────────────────────── */
+/* ── LOADER ──────────────────────────────────────────────── */
 #loader {
   position: absolute;
   inset: 0;
@@ -489,186 +503,161 @@ html, body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 16px;
+  gap: 18px;
   z-index: 999;
-  transition: opacity 0.7s ease;
+  transition: opacity 0.8s cubic-bezier(0.4,0,0.2,1);
 }
-#loader.fade-out { opacity: 0; pointer-events: none; }
+#loader.out { opacity: 0; pointer-events: none; }
 
-.l-box {
-  width: 52px;
-  height: 52px;
+.l-icon {
+  width: 54px;
+  height: 54px;
   border: 2px solid var(--gold);
-  border-radius: 9px;
+  border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
-  animation: pulse-border 2s ease-in-out infinite;
+  animation: icon-pulse 2.4s ease-in-out infinite;
 }
-@keyframes pulse-border {
-  0%, 100% { box-shadow: 0 0 0 0 var(--gold-glow); }
-  50%       { box-shadow: 0 0 0 8px transparent; }
+@keyframes icon-pulse {
+  0%,100% { box-shadow: 0 0 0 0 var(--gold-glow); }
+  50%      { box-shadow: 0 0 0 10px transparent; }
 }
+
 .l-name {
-  font-size: clamp(24px, 6vw, 34px);
+  font-size: clamp(26px, 6.5vw, 38px);
   font-weight: 700;
-  letter-spacing: 6px;
+  letter-spacing: 7px;
   text-transform: uppercase;
   color: var(--white);
+  animation: name-in 0.9s cubic-bezier(0.4,0,0.2,1) both;
 }
+@keyframes name-in {
+  from { opacity:0; transform: translateY(12px); }
+  to   { opacity:1; transform: translateY(0); }
+}
+
 .l-sub {
   font-size: 10px;
-  letter-spacing: 4px;
-  color: var(--w50);
+  letter-spacing: 5px;
+  color: var(--w60);
   text-transform: uppercase;
+  animation: name-in 0.9s 0.15s cubic-bezier(0.4,0,0.2,1) both;
 }
+
 .l-bar-track {
-  width: 150px;
+  width: 160px;
   height: 1px;
-  background: rgba(255,255,255,0.1);
-  overflow: hidden;
+  background: rgba(255,255,255,0.08);
   border-radius: 1px;
+  overflow: hidden;
 }
 .l-bar-fill {
   height: 100%;
   width: 0;
-  background: linear-gradient(90deg, var(--gold), var(--gold2));
-  animation: load-bar 1.5s ease-out forwards;
+  background: linear-gradient(90deg, var(--gold), var(--gold-hi));
+  animation: bar-fill 1.6s cubic-bezier(0.4,0,0.2,1) 0.2s both;
   border-radius: 1px;
 }
-@keyframes load-bar { from { width: 0 } to { width: 100% } }
+@keyframes bar-fill { from{width:0} to{width:100%} }
 
-/* ── HOW-TO OVERLAY ──────────────────────────────────────────── */
+/* ── HOW-TO ──────────────────────────────────────────────── */
 #howto {
   position: absolute;
   inset: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(0,0,0,0.85);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  background: rgba(0,0,0,0.88);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   z-index: 500;
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.35s ease;
+  transition: opacity 0.35s cubic-bezier(0.4,0,0.2,1);
 }
-#howto.show {
-  opacity: 1;
-  pointer-events: all;
-}
+#howto.show { opacity: 1; pointer-events: all; }
+
 .hw-card {
   background: var(--surface);
-  border: 1px solid var(--gold-border);
-  border-radius: 16px;
-  padding: clamp(20px,5vw,32px) clamp(24px,6vw,40px);
+  border: 1px solid var(--gold-dim);
+  border-radius: 18px;
+  padding: clamp(22px,5vw,34px) clamp(26px,6vw,44px);
   text-align: center;
-  max-width: clamp(260px, 80vw, 380px);
+  max-width: clamp(270px, 82vw, 390px);
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 14px;
-  box-shadow: 0 24px 80px rgba(0,0,0,0.8);
+  box-shadow: 0 30px 90px rgba(0,0,0,0.9);
+  animation: card-in 0.4s cubic-bezier(0.34,1.56,0.64,1) both;
 }
-.hw-logo { margin-bottom: 2px; }
+@keyframes card-in {
+  from { transform: scale(0.88) translateY(16px); opacity:0; }
+  to   { transform: scale(1) translateY(0); opacity:1; }
+}
+
 .hw-title {
-  font-size: clamp(17px, 4.5vw, 22px);
+  font-size: clamp(18px, 4.5vw, 23px);
   font-weight: 700;
   color: var(--white);
   letter-spacing: 1px;
 }
 .hw-title span { color: var(--gold); }
-.hw-divider {
-  width: 40px;
+
+.hw-sep {
+  width: 44px;
   height: 1px;
   background: linear-gradient(90deg, transparent, var(--gold), transparent);
 }
+
 .hw-body {
-  font-size: clamp(12px, 2.5vw, 14px);
-  color: var(--w80);
-  line-height: 2;
+  font-size: clamp(12px, 2.6vw, 14px);
+  color: var(--w90);
+  line-height: 2.1;
   direction: rtl;
 }
+
 .hw-btn {
-  margin-top: 4px;
-  padding: 11px 34px;
+  padding: 12px 38px;
   background: var(--gold);
   border: none;
-  border-radius: 9px;
+  border-radius: 10px;
   color: #000;
   font-size: 13px;
   font-weight: 700;
   letter-spacing: 1px;
   text-transform: uppercase;
   cursor: pointer;
-  touch-action: manipulation;
+  box-shadow: 0 4px 24px rgba(212,160,23,0.45);
   transition: opacity 0.15s, transform 0.15s, box-shadow 0.15s;
-  box-shadow: 0 4px 20px rgba(212,160,23,0.4);
 }
 .hw-btn:active {
   opacity: 0.85;
   transform: scale(0.96);
-  box-shadow: 0 2px 10px rgba(212,160,23,0.3);
+  box-shadow: 0 2px 12px rgba(212,160,23,0.3);
 }
 
-/* ── TOAST ───────────────────────────────────────────────────── */
+/* ── TOAST ───────────────────────────────────────────────── */
 #toast {
   position: absolute;
-  bottom: calc(var(--bar-h) + 14px);
+  bottom: calc(var(--bar) + 14px);
   left: 50%;
-  transform: translateX(-50%) translateY(10px);
+  transform: translateX(-50%) translateY(8px);
   background: var(--surface2);
-  border: 1px solid var(--gold-border);
-  border-radius: 9px;
-  padding: 9px 20px;
+  border: 1px solid var(--gold-dim);
+  border-radius: 10px;
+  padding: 9px 22px;
   font-size: 12px;
-  color: var(--w80);
+  color: var(--w90);
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.3s, transform 0.3s;
   z-index: 300;
   white-space: nowrap;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  box-shadow: 0 8px 36px rgba(0,0,0,0.7);
 }
 #toast.show {
   opacity: 1;
   transform: translateX(-50%) translateY(0);
-}
-
-/* ── PAGE TURN INDICATOR ─────────────────────────────────────── */
-/* subtle arrow hint that fades in on first load */
-#turn-hint {
-  position: absolute;
-  bottom: calc(var(--bar-h) + 20px);
-  right: 20px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-  opacity: 0;
-  pointer-events: none;
-  z-index: 100;
-  transition: opacity 0.5s;
-}
-#turn-hint.show { opacity: 1; }
-.th-arrow {
-  width: 36px;
-  height: 36px;
-  border: 1.5px solid var(--gold-border);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  animation: nudge 1.8s ease-in-out infinite;
-  color: var(--gold);
-}
-@keyframes nudge {
-  0%, 100% { transform: translateX(0); }
-  50%       { transform: translateX(5px); }
-}
-.th-label {
-  font-size: 9px;
-  letter-spacing: 2px;
-  text-transform: uppercase;
-  color: var(--w50);
 }
