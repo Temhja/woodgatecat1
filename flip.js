@@ -1,142 +1,420 @@
 /* ============================================================
-   WoodGate Catalog — flip.js
-   Hard Flip Engine · Cinematic · Drag + Auto · 170 Pages
+   WoodGate Catalog — flip.js  v4.0
+   Bezier Paper Curl Engine
+   ─────────────────────────────────────────────────────────
+   How it works:
+   The page is drawn frame-by-frame on a <canvas> element that
+   sits over the static book container. On each frame we draw:
+
+   1. DESTINATION page (flat, underneath everything)
+   2. CURRENT page — but only the flat "not yet peeled" portion,
+      clipped to a polygon that shrinks as the flip progresses
+   3. FOLD SHADOW — a soft gradient along the fold line
+   4. CURL FACE — the turning portion of the page, drawn as a
+      curved quad using quadraticCurveTo. The background image
+      is painted onto it using drawImage with a saved/restored
+      canvas transform so it appears to sit on the curved face.
+   5. BACK-FACE — a slightly lighter tint reveals the next page
+      underneath the curl, simulating paper translucency.
+   6. CAST SHADOW — radial gradient shadow cast by the lifted
+      page onto the destination page beneath.
+
+   RTL Arabic: forward flip peels from the LEFT edge.
+               backward flip peels from the RIGHT edge.
    ============================================================ */
 
 /* ============================================================
-   PAGES — 170 entries, one per image file.
-   Files live in:  pages/pg1.jpg … pages/pg170.jpg
+   FORMAT CONFIG
+   Set USE_WEBP = true once images are converted to WebP.
+   ============================================================ */
+var USE_WEBP = false; /* ← flip to true after converting */
 
-   To activate all pages: the array is fully written below.
-   Just make sure your images are in the pages/ folder.
+/* ============================================================
+   PAGES — 170 pages auto-generated
    ============================================================ */
 var PAGES = (function(){
-  var p = [];
-  var labels = {
-    1:   'Cover',
-    170: 'Back Cover'
-  };
-  for(var i = 1; i <= 170; i++){
-    p.push({
-      src:   'pages/pg' + i + '.jpg',
-      label: labels[i] || 'Page ' + i
-    });
-  }
+  var p = [], ext = USE_WEBP ? '.webp' : '.jpg';
+  var special = {1:'Cover', 170:'Back Cover'};
+  for(var i = 1; i <= 170; i++)
+    p.push({ src:'pages/pg'+i+ext, label: special[i]||'Page '+i });
   return p;
 }());
 
 /* ============================================================
    EASING
    ============================================================ */
-function easeOutBack(t, c) {
-  /* c controls overshoot strength. Hard flip uses c=2.0 for
-     a crisp snap that settles decisively. */
-  c = c || 2.0;
-  var c3 = c + 1;
-  return 1 + c3 * Math.pow(t - 1, 3) + c * Math.pow(t - 1, 2);
-}
-
-function easeOutCubic(t) {
-  return 1 - Math.pow(1 - t, 3);
-}
-
-function easeInCubic(t) {
-  return t * t * t;
-}
-
-/* Cinematic hard flip uses a two-phase ease:
-   Phase 1 (0→0.5): fast departure — easeInCubic accelerates quickly
-   Phase 2 (0.5→1): easeOutBack with overshoot — snaps past 180° then settles
-   This gives the "slap" of a hard flip with a premium landing. */
-function cinematicHard(t) {
-  if(t < 0.5) {
-    return easeInCubic(t * 2) * 0.5;
-  } else {
-    var t2 = (t - 0.5) * 2; /* 0→1 for second phase */
-    return 0.5 + easeOutBack(t2, 1.8) * 0.5;
-  }
-}
-
-function lerp(a, b, t) { return a + (b - a) * t; }
-function clamp(v, lo, hi) { return v < lo ? lo : v > hi ? hi : v; }
+function easeInOutCubic(t){ return t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2; }
+function easeOutCubic(t)  { return 1-Math.pow(1-t,3); }
+function easeOutBack(t,c) { c=c||1.6; return 1+(c+1)*Math.pow(t-1,3)+c*Math.pow(t-1,2); }
+function lerp(a,b,t)      { return a+(b-a)*t; }
+function clamp(v,lo,hi)   { return v<lo?lo:v>hi?hi:v; }
 
 /* ============================================================
-   PROGRESSIVE IMAGE LOADER
-   Blur-up: image starts blurred and sharpens on load.
-   Returns a cancel function.
+   IMAGE CACHE + LOADER
+   ─────────────────────────────────────────────────────────
+   _cache[src] = HTMLImageElement once decoded, or true if done.
+   Images are loaded as HTMLImageElement objects so we can use
+   ctx.drawImage() to paint them onto the canvas — this is the
+   key difference from the old background-image approach.
    ============================================================ */
-var _loadCache = {};
+var _imgCache  = {}; /* src → HTMLImageElement (decoded) */
+var _imgPending= {}; /* src → [callbacks] — in-flight */
 
-function loadImg(el, src, onDone) {
-  if(!src || !el) return;
-
-  /* Already loaded into this element with same src */
-  if(el.dataset.loadedSrc === src) {
-    if(onDone) onDone();
-    return;
-  }
-
-  /* Apply blur-up state */
-  el.classList.remove('img-ready');
-  el.classList.add('img-loading');
-
-  /* If already in browser cache just apply it */
-  if(_loadCache[src]) {
-    el.style.backgroundImage = "url('" + src + "')";
-    el.dataset.loadedSrc = src;
-    requestAnimationFrame(function(){
-      el.classList.remove('img-loading');
-      el.classList.add('img-ready');
-      if(onDone) onDone();
-    });
-    return;
-  }
-
+function getImage(src, cb){
+  /* Already decoded */
+  if(_imgCache[src]){ if(cb) cb(_imgCache[src]); return; }
+  /* Queue onto existing in-flight request */
+  if(_imgPending[src]){ if(cb) _imgPending[src].push(cb); return; }
+  /* Start new fetch */
+  _imgPending[src] = cb ? [cb] : [];
   var img = new Image();
-  img.onload = function() {
-    _loadCache[src] = true;
-    /* Only apply if element still wants this src
-       (user may have navigated away during load) */
-    if(el.dataset.wantSrc === src) {
-      el.style.backgroundImage = "url('" + src + "')";
-      el.dataset.loadedSrc = src;
-      requestAnimationFrame(function(){
-        el.classList.remove('img-loading');
-        el.classList.add('img-ready');
-        if(onDone) onDone();
-      });
+  img.decoding = 'async';
+  img.onload = function(){
+    /* Use decode() if available for smoother first paint */
+    var finish = function(){
+      _imgCache[src] = img;
+      var cbs = _imgPending[src] || [];
+      delete _imgPending[src];
+      for(var i=0;i<cbs.length;i++) cbs[i](img);
+    };
+    img.decode ? img.decode().then(finish).catch(finish) : finish();
+  };
+  img.onerror = function(){
+    /* WebP → JPG fallback */
+    if(USE_WEBP && src.slice(-5)==='.webp'){
+      var fb = src.slice(0,-5)+'.jpg';
+      var cbs = _imgPending[src]||[];
+      delete _imgPending[src];
+      for(var i=0;i<cbs.length;i++) getImage(fb,cbs[i]);
+      return;
     }
+    delete _imgPending[src];
   };
-  img.onerror = function() {
-    /* Placeholder pattern for missing pages */
-    el.style.backgroundImage =
-      'repeating-linear-gradient(45deg,' +
-      'rgba(212,160,23,0.04) 0px,rgba(212,160,23,0.04) 1px,' +
-      'transparent 1px,transparent 10px),' +
-      'linear-gradient(#0f0f0f,#0f0f0f)';
-    el.classList.remove('img-loading');
-    el.classList.add('img-ready');
-  };
-
-  el.dataset.wantSrc = src;
   img.src = src;
 }
 
-/* Silent background preload */
-function preload(src) {
-  if(!src || _loadCache[src]) return;
-  var img = new Image();
-  img.onload = function(){ _loadCache[src] = true; };
-  img.src = src;
+/* Connection-aware preload window */
+var _conn = (function(){
+  var c=navigator.connection||navigator.mozConnection||navigator.webkitConnection;
+  if(!c) return {ahead:7,behind:3};
+  var t=(c.effectiveType||'4g').toLowerCase();
+  return t==='2g'||t==='slow-2g'?{ahead:2,behind:1}:t==='3g'?{ahead:4,behind:2}:{ahead:7,behind:3};
+}());
+
+var _preloadTimer=null;
+function preloadAround(idx){
+  clearTimeout(_preloadTimer);
+  _preloadTimer=setTimeout(function(){
+    for(var d=-_conn.behind;d<=_conn.ahead;d++){
+      var i=idx+d;
+      if(i>=0&&i<PAGES.length) getImage(PAGES[i].src,null);
+    }
+  },60);
 }
 
-/* Preload a window around current index */
-function preloadWindow(idx) {
-  /* 3 ahead, 2 behind */
-  for(var d = -2; d <= 3; d++) {
-    var i = idx + d;
-    if(i >= 0 && i < PAGES.length) preload(PAGES[i].src);
+/* ============================================================
+   SHIMMER — shown on the canvas while images load
+   ============================================================ */
+function _buildShimmer(el){
+  if(el._shimmer) return;
+  var ov=document.createElement('div');
+  ov.className='shimmer-overlay';
+  var block=document.createElement('div'); block.className='shimmer-block'; ov.appendChild(block);
+  var lines=document.createElement('div'); lines.className='shimmer-lines';
+  for(var i=0;i<3;i++){ var ln=document.createElement('div'); ln.className='shimmer-line'; lines.appendChild(ln); }
+  ov.appendChild(lines);
+  var brand=document.createElement('div'); brand.className='shimmer-brand';
+  brand.innerHTML='<div class="shimmer-brand-inner"><div class="shimmer-brand-icon">'+
+    '<svg viewBox="0 0 22 22" fill="none" width="14" height="14">'+
+    '<rect x="2" y="2" width="8" height="8" rx="1" stroke="#d4a017" stroke-width="1.5"/>'+
+    '<rect x="12" y="2" width="8" height="8" rx="1" stroke="#d4a017" stroke-width="1.5"/>'+
+    '<rect x="2" y="12" width="8" height="8" rx="1" stroke="#d4a017" stroke-width="1.5"/>'+
+    '<rect x="12" y="12" width="8" height="8" rx="1" stroke="#d4a017" stroke-width="1.5"/>'+
+    '</svg></div><div class="shimmer-brand-name">WoodGate</div></div>';
+  ov.appendChild(brand);
+  el.appendChild(ov); el._shimmer=ov;
+}
+function _removeShimmer(el){
+  if(!el._shimmer) return;
+  var ov=el._shimmer;
+  ov.style.opacity='0';
+  setTimeout(function(){ if(ov.parentNode) ov.parentNode.removeChild(ov); el._shimmer=null; },380);
+}
+
+/* ============================================================
+   CANVAS RENDERER
+   ─────────────────────────────────────────────────────────
+   All drawing happens here. Called every rAF frame during flip,
+   and once statically when showing a page.
+
+   Parameters:
+   ctx        — 2d context of the canvas
+   W, H       — canvas pixel dimensions (already DPR-scaled)
+   imgCurr    — HTMLImageElement of the current (leaving) page
+   imgNext    — HTMLImageElement of the destination page
+   progress   — 0.0 (no flip) → 1.0 (flip complete)
+   dir        — +1 = forward (peel from LEFT), -1 = backward (peel from RIGHT)
+   ============================================================ */
+function renderFrame(ctx, W, H, imgCurr, imgNext, progress, dir){
+  ctx.clearRect(0,0,W,H);
+
+  var p    = progress;
+  var fromLeft = (dir > 0);
+
+  /* ── 1. DESTINATION page (flat, full) ─────────────────── */
+  if(imgNext){
+    ctx.drawImage(imgNext, 0, 0, W, H);
+  } else {
+    ctx.fillStyle='#111'; ctx.fillRect(0,0,W,H);
   }
+
+  if(p <= 0){
+    /* No flip — just draw current page on top */
+    if(imgCurr) ctx.drawImage(imgCurr,0,0,W,H);
+    return;
+  }
+
+  /* ── Fold geometry ────────────────────────────────────── */
+  /*
+    The fold line is a vertical line that moves across the page.
+    fromLeft=true:  fold starts at x=W (right edge) at p=0
+                    and moves to x=0  (left edge)  at p=1
+    fromLeft=false: fold starts at x=0 and moves to x=W
+
+    The "curl amount" is how much the page bends — peaks at p=0.5
+    and is 0 at p=0 and p=1.
+
+    foldX  = x position of the fold line
+    curlW  = width of the curved portion (how far the curl extends)
+    curlBow= how much the bezier curve bows outward
+  */
+  var foldX, curvedEdgeX;
+  if(fromLeft){
+    foldX        = W * (1 - p);
+    curvedEdgeX  = foldX - W * 0.18 * Math.sin(p * Math.PI);
+  } else {
+    foldX        = W * p;
+    curvedEdgeX  = foldX + W * 0.18 * Math.sin(p * Math.PI);
+  }
+
+  var bowAmount = H * 0.04 * Math.sin(p * Math.PI); /* vertical bow in the fold line */
+
+  /* ── 2. FLAT portion of current page ─────────────────── */
+  /*
+    Clip to the polygon of the page that hasn't yet peeled.
+    This is everything on the "not yet turned" side of the fold line.
+  */
+  ctx.save();
+  ctx.beginPath();
+  if(fromLeft){
+    /* Flat portion = left side: 0..foldX */
+    ctx.moveTo(0,         0);
+    ctx.lineTo(foldX,     bowAmount);          /* fold line top (with bow) */
+    ctx.lineTo(foldX,     H - bowAmount);       /* fold line bottom */
+    ctx.lineTo(0,         H);
+    ctx.closePath();
+  } else {
+    /* Flat portion = right side: foldX..W */
+    ctx.moveTo(foldX,     bowAmount);
+    ctx.lineTo(W,         0);
+    ctx.lineTo(W,         H);
+    ctx.lineTo(foldX,     H - bowAmount);
+    ctx.closePath();
+  }
+  ctx.clip();
+  if(imgCurr) ctx.drawImage(imgCurr, 0, 0, W, H);
+  else { ctx.fillStyle='#111'; ctx.fillRect(0,0,W,H); }
+  ctx.restore();
+
+  /* ── 3. CAST SHADOW from lifted page ─────────────────── */
+  /*
+    Shadow is a linear gradient emanating from the fold line
+    into the destination page area. Peaks at p=0.5.
+  */
+  var shadowDepth = 0.55 * Math.sin(p * Math.PI);
+  ctx.save();
+  var sg;
+  if(fromLeft){
+    sg = ctx.createLinearGradient(foldX, 0, foldX + W*0.18, 0);
+  } else {
+    sg = ctx.createLinearGradient(foldX, 0, foldX - W*0.18, 0);
+  }
+  sg.addColorStop(0,   'rgba(0,0,0,'+shadowDepth.toFixed(2)+')');
+  sg.addColorStop(0.5, 'rgba(0,0,0,'+(shadowDepth*0.35).toFixed(2)+')');
+  sg.addColorStop(1,   'rgba(0,0,0,0)');
+  ctx.fillStyle = sg;
+  if(fromLeft){
+    ctx.fillRect(foldX, 0, W*0.22, H);
+  } else {
+    ctx.fillRect(Math.max(0, foldX - W*0.22), 0, W*0.22, H);
+  }
+  ctx.restore();
+
+  /* ── 4. CURL FACE (turning portion of the page) ────────── */
+  /*
+    We draw the curl as a quadrilateral with one curved edge.
+    The four corners of the turning page region:
+
+    fromLeft=true (page peels from left hinge):
+      Top-left    = (foldX, bowAmount)          — fold line top
+      Bottom-left = (foldX, H-bowAmount)        — fold line bottom
+      Bottom-right= (curvedEdgeX, H)            — far edge bottom
+      Top-right   = (curvedEdgeX, 0)            — far edge top
+
+    The left edge (fold line) is straight.
+    The right edge (curl edge) curves using quadraticCurveTo.
+
+    We paint the current-page image onto this shape by:
+    1. Saving ctx state
+    2. Setting up a clip path in the curl shape
+    3. Using ctx.transform to map the image coords to this shape
+    4. drawImage
+    5. Restoring
+
+    For the back face (> 90°) we flip to the next page image.
+  */
+
+  /* Which image appears on the curl face? */
+  var curlImg;
+  if(p < 0.5){
+    /* Front face — current page */
+    curlImg = imgCurr;
+  } else {
+    /* Back face — next page (mirrored) */
+    curlImg = imgNext;
+  }
+
+  ctx.save();
+
+  /* Build clip path for the curl region */
+  ctx.beginPath();
+  if(fromLeft){
+    /* Fold line on the left, curl edge on the right */
+    var topFold    = {x: foldX,        y: bowAmount   };
+    var botFold    = {x: foldX,        y: H-bowAmount  };
+    var botCurl    = {x: curvedEdgeX,  y: H           };
+    var topCurl    = {x: curvedEdgeX,  y: 0           };
+
+    ctx.moveTo(topFold.x, topFold.y);
+    ctx.lineTo(botFold.x, botFold.y);
+    /* Curved bottom edge */
+    var midBotX = lerp(foldX, curvedEdgeX, 0.5);
+    var midBotY = H + bowAmount * 1.5 * (p<.5?1:-1);
+    ctx.quadraticCurveTo(midBotX, midBotY, botCurl.x, botCurl.y);
+    /* Right (curl) edge */
+    ctx.lineTo(topCurl.x, topCurl.y);
+    /* Curved top edge */
+    var midTopX = lerp(foldX, curvedEdgeX, 0.5);
+    var midTopY = 0 - bowAmount * 1.5 * (p<.5?1:-1);
+    ctx.quadraticCurveTo(midTopX, midTopY, topFold.x, topFold.y);
+  } else {
+    var topFold2   = {x: foldX,       y: bowAmount   };
+    var botFold2   = {x: foldX,       y: H-bowAmount  };
+    var botCurl2   = {x: curvedEdgeX, y: H           };
+    var topCurl2   = {x: curvedEdgeX, y: 0           };
+
+    ctx.moveTo(topFold2.x, topFold2.y);
+    var midTopX2 = lerp(foldX, curvedEdgeX, 0.5);
+    var midTopY2 = 0 - bowAmount * 1.5 * (p<.5?1:-1);
+    ctx.quadraticCurveTo(midTopX2, midTopY2, topCurl2.x, topCurl2.y);
+    ctx.lineTo(botCurl2.x, botCurl2.y);
+    var midBotX2 = lerp(foldX, curvedEdgeX, 0.5);
+    var midBotY2 = H + bowAmount * 1.5 * (p<.5?1:-1);
+    ctx.quadraticCurveTo(midBotX2, midBotY2, botFold2.x, botFold2.y);
+    ctx.closePath();
+  }
+  ctx.clip();
+
+  /*
+    Paint the image onto the curl face.
+    For the back face (p > 0.5) we horizontally mirror the image
+    so the content reads correctly on the reverse side.
+  */
+  if(curlImg){
+    if(p > 0.5 && fromLeft){
+      /* Mirror horizontally for back face */
+      ctx.save();
+      ctx.translate(W, 0);
+      ctx.scale(-1, 1);
+      ctx.drawImage(curlImg, 0, 0, W, H);
+      ctx.restore();
+    } else if(p > 0.5 && !fromLeft){
+      ctx.save();
+      ctx.translate(W, 0);
+      ctx.scale(-1, 1);
+      ctx.drawImage(curlImg, 0, 0, W, H);
+      ctx.restore();
+    } else {
+      ctx.drawImage(curlImg, 0, 0, W, H);
+    }
+  }
+
+  /* ── Curl shading ────────────────────────────────────── */
+  /*
+    Brightness drops toward the fold line (page curls away from viewer).
+    A gradient from the fold line to the curl edge simulates this.
+    Darker at fold line, lighter at the far edge.
+  */
+  var curlShadeDepth = 0.42 * Math.sin(p * Math.PI); /* peaks at p=0.5 */
+  var csg;
+  if(fromLeft){
+    csg = ctx.createLinearGradient(foldX, 0, curvedEdgeX || foldX+1, 0);
+    csg.addColorStop(0,   'rgba(0,0,0,'+curlShadeDepth.toFixed(2)+')');
+    csg.addColorStop(0.35,'rgba(0,0,0,'+(curlShadeDepth*0.15).toFixed(2)+')');
+    csg.addColorStop(1,   'rgba(0,0,0,0)');
+  } else {
+    csg = ctx.createLinearGradient(foldX, 0, curvedEdgeX || foldX-1, 0);
+    csg.addColorStop(0,   'rgba(0,0,0,'+curlShadeDepth.toFixed(2)+')');
+    csg.addColorStop(0.35,'rgba(0,0,0,'+(curlShadeDepth*0.15).toFixed(2)+')');
+    csg.addColorStop(1,   'rgba(0,0,0,0)');
+  }
+  ctx.fillStyle = csg;
+  ctx.fillRect(0, 0, W, H);
+
+  /* Gloss highlight on curl edge — thin bright line */
+  var glossOpacity = 0.10 * Math.sin(p * Math.PI);
+  ctx.strokeStyle = 'rgba(255,255,255,'+glossOpacity.toFixed(2)+')';
+  ctx.lineWidth   = Math.max(1, W * 0.003);
+  ctx.beginPath();
+  if(fromLeft){
+    ctx.moveTo(curvedEdgeX, 0);
+    ctx.quadraticCurveTo(
+      lerp(foldX, curvedEdgeX, 0.5),
+      H * 0.5,
+      curvedEdgeX, H
+    );
+  } else {
+    ctx.moveTo(curvedEdgeX, 0);
+    ctx.quadraticCurveTo(
+      lerp(foldX, curvedEdgeX, 0.5),
+      H * 0.5,
+      curvedEdgeX, H
+    );
+  }
+  ctx.stroke();
+
+  ctx.restore();
+
+  /* ── 5. FOLD SHADOW (dark crease at fold line) ──────── */
+  var foldShadowW = Math.max(2, W * 0.012);
+  var fsOpacity   = 0.65 * Math.sin(p * Math.PI);
+  ctx.save();
+  if(fromLeft){
+    var fsg = ctx.createLinearGradient(foldX - foldShadowW*2, 0, foldX + foldShadowW, 0);
+    fsg.addColorStop(0,   'rgba(0,0,0,0)');
+    fsg.addColorStop(0.5, 'rgba(0,0,0,'+fsOpacity.toFixed(2)+')');
+    fsg.addColorStop(1,   'rgba(0,0,0,'+(fsOpacity*0.3).toFixed(2)+')');
+    ctx.fillStyle = fsg;
+    ctx.fillRect(foldX - foldShadowW*2, 0, foldShadowW*3, H);
+  } else {
+    var fsg2 = ctx.createLinearGradient(foldX - foldShadowW, 0, foldX + foldShadowW*2, 0);
+    fsg2.addColorStop(0,   'rgba(0,0,0,'+(fsOpacity*0.3).toFixed(2)+')');
+    fsg2.addColorStop(0.5, 'rgba(0,0,0,'+fsOpacity.toFixed(2)+')');
+    fsg2.addColorStop(1,   'rgba(0,0,0,0)');
+    ctx.fillStyle = fsg2;
+    ctx.fillRect(foldX - foldShadowW, 0, foldShadowW*3, H);
+  }
+  ctx.restore();
 }
 
 /* ============================================================
@@ -144,513 +422,346 @@ function preloadWindow(idx) {
    ============================================================ */
 var Flip = (function(){
 
-  /* ── State ───────────────────────────────────────────────── */
-  var cur    = 0;
-  var busy   = false;
-  var rafId  = null;
+  /* ── State ─────────────────────────────────────────────── */
+  var cur     = 0;
+  var busy    = false;
+  var rafId   = null;
+  var FLIP_MS = 820; /* cinematic */
 
-  /* Cinematic duration: slow and dramatic */
-  var FLIP_MS = 780;
-
-  /* ── DOM ─────────────────────────────────────────────────── */
-  var $book     = document.getElementById('book');
-  var $scene    = document.getElementById('book-scene');
+  /* ── DOM ───────────────────────────────────────────────── */
   var $stage    = document.getElementById('stage');
-  var $under    = document.getElementById('pg-under');
-  var $curr     = document.getElementById('pg-curr');
-  var $flipper  = document.getElementById('flipper');
-  var $ffront   = document.getElementById('flip-front');
-  var $fback    = document.getElementById('flip-back');
+  var $scene    = document.getElementById('book-scene');
+  var $book     = document.getElementById('book');
   var $btnBack  = document.getElementById('btn-back');
   var $btnFwd   = document.getElementById('btn-fwd');
   var $counter  = document.getElementById('counter');
   var $dots     = document.getElementById('dots-track');
 
-  /* ── Sizing ──────────────────────────────────────────────── */
-  /* Each page is A4 landscape: 297×210mm ≈ 1.414:1
-     User's actual images: 3309×2367 ≈ 1.398:1          */
-  var PAGE_W_H = 3309 / 2367;
+  /* ── Canvas setup ──────────────────────────────────────── */
+  /*
+    We replace the old pg-layer divs with a single <canvas>.
+    The canvas is the same size as the book and receives all drawing.
+  */
+  var $canvas = null;
+  var $ctx    = null;
+  var _W = 0, _H = 0, _DPR = 1;
 
-  function resize() {
+  function _initCanvas(){
+    /* Remove old page layers if they exist */
+    ['pg-under','pg-curr'].forEach(function(id){
+      var el=document.getElementById(id); if(el) el.remove();
+    });
+    /* Remove old flipper */
+    var fl=document.getElementById('flipper'); if(fl) fl.remove();
+
+    $canvas = document.createElement('canvas');
+    $canvas.id = 'flip-canvas';
+    $canvas.style.cssText =
+      'position:absolute;inset:0;width:100%;height:100%;border-radius:3px;display:block;cursor:grab;touch-action:none;';
+    $book.appendChild($canvas);
+    $ctx = $canvas.getContext('2d', {alpha:false});
+  }
+
+  function _resizeCanvas(){
+    _DPR = Math.min(window.devicePixelRatio || 1, 2); /* cap at 2× for perf */
+    var rect = $book.getBoundingClientRect();
+    _W = Math.round(rect.width  * _DPR);
+    _H = Math.round(rect.height * _DPR);
+    $canvas.width  = _W;
+    $canvas.height = _H;
+    /* Redraw current frame after resize */
+    if(!busy) _drawStatic();
+  }
+
+  /* ── Book sizing ───────────────────────────────────────── */
+  var PAGE_RATIO = 3309 / 2367;
+
+  function resize(){
     var sw = $stage.clientWidth  - 20;
     var sh = $stage.clientHeight - 20;
-    var W  = Math.min(sw, sh * PAGE_W_H);
-    var H  = W / PAGE_W_H;
-    if(H > sh){ H = sh; W = H * PAGE_W_H; }
+    var W  = Math.min(sw, sh * PAGE_RATIO);
+    var H  = W / PAGE_RATIO;
+    if(H > sh){ H = sh; W = H * PAGE_RATIO; }
     W = Math.round(W); H = Math.round(H);
     $scene.style.width  = W + 'px';
     $scene.style.height = H + 'px';
     $book.style.width   = W + 'px';
     $book.style.height  = H + 'px';
-    _W = W; _H = H;
+    _resizeCanvas();
   }
 
-  var _W = 0, _H = 0;
-
-  /* ── UI Updater ──────────────────────────────────────────── */
-  var MAX_DOTS = 17;
-  var DOT_PX   = 12; /* dot + gap */
-
-  function updateUI(idx) {
-    var p = PAGES[idx];
-    $counter.textContent = (idx + 1) + ' / ' + PAGES.length + '  ·  ' + p.label;
-    $btnBack.disabled = (idx === 0);
-    $btnFwd.disabled  = (idx === PAGES.length - 1);
-
-    /* Dots */
-    var all = $dots.querySelectorAll('.dot');
-    all.forEach(function(d, i){
-      d.className = 'dot' +
-        (i === idx              ? ' active' :
-         Math.abs(i - idx) < 3 ? ' near'   : '');
-    });
-
-    /* Slide dot strip */
-    if(PAGES.length > MAX_DOTS) {
-      var half   = Math.floor(MAX_DOTS / 2);
-      var offset = clamp(idx - half, 0, PAGES.length - MAX_DOTS);
-      $dots.style.transform = 'translateX(' + (-offset * DOT_PX) + 'px)';
+  /* ── Draw static (no flip) ─────────────────────────────── */
+  function _drawStatic(){
+    var img = _imgCache[PAGES[cur].src] || null;
+    renderFrame($ctx, _W, _H, img, null, 0, 1);
+    /* If image not loaded yet — show shimmer */
+    if(!img){
+      _buildShimmer($book);
+      getImage(PAGES[cur].src, function(loaded){
+        _removeShimmer($book);
+        renderFrame($ctx, _W, _H, loaded, null, 0, 1);
+      });
+    } else {
+      _removeShimmer($book);
     }
   }
 
-  /* ── Show page (no animation) ────────────────────────────── */
-  function showPage(idx) {
-    cur = clamp(idx, 0, PAGES.length - 1);
-    loadImg($curr, PAGES[cur].src);
-    $under.style.backgroundImage = '';
-    $under.dataset.loadedSrc = '';
+  /* ── Show page (instant) ───────────────────────────────── */
+  function showPage(idx){
+    cur = clamp(idx, 0, PAGES.length-1);
+    _drawStatic();
     updateUI(cur);
-    preloadWindow(cur);
+    preloadAround(cur);
   }
 
-  /* ── Hard Flip ───────────────────────────────────────────── */
+  /* ── UI ────────────────────────────────────────────────── */
+  var MAX_DOTS=17, DOT_PX=12;
+
+  function updateUI(idx){
+    var p=PAGES[idx];
+    $counter.textContent=(idx+1)+' / '+PAGES.length+'  ·  '+p.label;
+    $btnBack.disabled=(idx===0);
+    $btnFwd.disabled=(idx===PAGES.length-1);
+    var all=$dots.querySelectorAll('.dot');
+    all.forEach(function(d,i){
+      d.className='dot'+(i===idx?' active':Math.abs(i-idx)<3?' near':'');
+    });
+    if(PAGES.length>MAX_DOTS){
+      var off=clamp(idx-Math.floor(MAX_DOTS/2),0,PAGES.length-MAX_DOTS);
+      $dots.style.transform='translateX('+(-off*DOT_PX)+'px)';
+    }
+  }
+
+  /* ── FLIP ───────────────────────────────────────────────── */
   /*
-    RTL Arabic hard flip:
-    FORWARD (dir +1): page turns from LEFT hinge toward the RIGHT
-      — this is "forward" in an Arabic book
-      transform-origin: left center
-      rotateY: 0 → +180 (peels right)
-
-    BACKWARD (dir -1): page turns from RIGHT hinge toward the LEFT
-      transform-origin: right center
-      rotateY: 0 → -180 (peels left)
-
-    The "hard" character:
-    - Card stays FLAT (no curl, no perspective distortion on faces)
-    - Sharp gloss stripe sweeps across at ~50% rotation
-    - easeOutBack overshoot: card snaps 5–8° past vertical then settles
-    - Scale micro-lift: book very subtly scales up 1.5% at start,
-      settling back as the flip lands — gives a "picked up" feel
-    - fromDrag: if we're continuing from a drag, start at dragAngle
+    Loads both images, then animates renderFrame() each rAF.
+    If images aren't ready, waits for them (rare if preload works).
+    fromDrag + dragProgress: continue from mid-drag position.
   */
-  function flip(dir, fromDrag, dragAngle) {
+  function flip(dir, fromDrag, dragProgress){
     if(busy) return false;
     var next = cur + dir;
-    if(next < 0 || next >= PAGES.length) return false;
-
+    if(next<0||next>=PAGES.length) return false;
     busy = true;
     if(rafId) cancelAnimationFrame(rafId);
 
-    var fromLeft   = (dir > 0);
-    var startAngle = fromDrag ? dragAngle : 0;
-    var endAngle   = fromLeft ? 180 : -180;
-    var progress0  = Math.abs(startAngle) / 180; /* 0–1 already completed */
+    var curSrc  = PAGES[cur].src;
+    var nextSrc = PAGES[next].src;
+    var startP  = fromDrag ? clamp(dragProgress, 0, 0.85) : 0;
+    var remaining = 1 - startP;
+    var duration  = Math.max(FLIP_MS * remaining, 180);
 
-    /* Prepare under-page (destination) */
-    loadImg($under, PAGES[next].src);
+    /* Ensure both images loaded before animating */
+    var imgC = _imgCache[curSrc]  || null;
+    var imgN = _imgCache[nextSrc] || null;
 
-    /* Prepare flipper faces */
-    $ffront.style.backgroundImage = $curr.style.backgroundImage || '';
-    $ffront.dataset.loadedSrc     = PAGES[cur].src;
-    $ffront.classList.remove('img-loading');
-    $ffront.classList.add('img-ready');
+    function startAnim(){
+      imgC = _imgCache[curSrc]  || null;
+      imgN = _imgCache[nextSrc] || null;
+      var startTime = null;
 
-    $fback.style.backgroundImage  = '';
-    $fback.dataset.loadedSrc      = '';
-    loadImg($fback, PAGES[next].src);
-
-    /* Hinge */
-    $flipper.style.transformOrigin = fromLeft ? 'left center' : 'right center';
-    $flipper.style.display = 'block';
-    $flipper.style.transform = 'rotateY(' + startAngle + 'deg)';
-
-    /* How long is the remaining animation? Shorten if drag already covered ground */
-    var remaining = 1 - progress0;
-    var duration  = FLIP_MS * remaining;
-    /* Minimum 220ms so it never feels instant */
-    duration = Math.max(duration, 220);
-
-    /* Hide curr so only flipper shows during animation */
-    $curr.style.opacity = '0';
-
-    var startTime = null;
-
-    function step(ts) {
-      if(!startTime) startTime = ts;
-      var elapsed = ts - startTime;
-      var rawT    = clamp(elapsed / duration, 0, 1);
-
-      /* Ease: cinematic hard — fast out, snap landing */
-      var easedT  = cinematicHard(rawT);
-      var angle   = lerp(startAngle, endAngle, easedT);
-
-      $flipper.style.transform = 'rotateY(' + angle + 'deg)';
-
-      /* Gloss sweep: peaks exactly at 90° (halfway) */
-      var absAngle   = Math.abs(angle);
-      var flipFrac   = absAngle / 180; /* 0→1 */
-      var glossPeak  = 1 - Math.abs(flipFrac - 0.5) * 4; /* 0→1→0 centred at 50% */
-      glossPeak      = clamp(glossPeak, 0, 1);
-
-      /* Gloss on front face (0→90°) */
-      if(absAngle <= 90) {
-        var pos = (flipFrac * 2) * 100; /* 0→100% as it goes to 90° */
-        _setGloss($ffront, glossPeak * 0.7, pos);
-        _setEdgeShadow($ffront, flipFrac * 2, fromLeft);
-        _setGloss($fback, 0, 0);
-      } else {
-        /* Back face visible (90→180°) */
-        var backFrac = (flipFrac - 0.5) * 2; /* 0→1 as it goes 90→180° */
-        var backPos  = backFrac * 100;
-        _setGloss($fback,  glossPeak * 0.5, backPos);
-        _setEdgeShadow($fback, (1 - backFrac) * 0.8, !fromLeft);
-        _setGloss($ffront, 0, 0);
+      function step(ts){
+        if(!startTime) startTime = ts;
+        var rawT = clamp((ts-startTime)/duration, 0, 1);
+        /* Cinematic: easeInOutCubic for smooth departure and landing */
+        var eased = easeInOutCubic(rawT);
+        var progress = lerp(startP, 1.0, eased);
+        renderFrame($ctx, _W, _H, imgC, imgN, progress, dir);
+        if(rawT < 1){
+          rafId = requestAnimationFrame(step);
+        } else {
+          _flipDone(next, imgN);
+        }
       }
-
-      /* Micro-lift scale: 1.0 → 1.015 at 20% → 1.0 */
-      var liftT  = clamp(flipFrac / 0.2, 0, 1);
-      var dropT  = clamp((flipFrac - 0.8) / 0.2, 0, 1);
-      var lift   = fromLeft
-        ? (liftT < 1 ? liftT : 1 - dropT) * 0.015
-        : (liftT < 1 ? liftT : 1 - dropT) * 0.015;
-      $book.style.transform = 'scale(' + (1 + lift) + ')';
-
-      if(rawT < 1) {
-        rafId = requestAnimationFrame(step);
-      } else {
-        _flipDone(next);
-      }
+      rafId = requestAnimationFrame(step);
     }
 
-    rafId = requestAnimationFrame(step);
+    /* If either image missing, load first (shimmer shows) */
+    if(!imgC || !imgN){
+      _buildShimmer($book);
+      var loaded = 0;
+      var needed = (!imgC?1:0) + (!imgN?1:0);
+      function onLoad(){
+        loaded++;
+        if(loaded >= needed){ _removeShimmer($book); startAnim(); }
+      }
+      if(!imgC) getImage(curSrc,  function(img){ imgC=img; onLoad(); });
+      else onLoad(); /* count it immediately */
+      if(!imgN) getImage(nextSrc, function(img){ imgN=img; onLoad(); });
+      else onLoad();
+    } else {
+      startAnim();
+    }
     return true;
   }
 
-  function _setGloss(face, opacity, posPercent) {
-    face.style.setProperty('--gloss-opacity', opacity);
-    /* We animate via direct style for performance */
-    if(face._glossEl) {
-      face._glossEl.style.opacity         = opacity;
-      face._glossEl.style.backgroundPosition = posPercent + '% 0';
-    }
-  }
-
-  function _setEdgeShadow(face, opacity, onLeft) {
-    if(face._edgeEl) {
-      face._edgeEl.style.opacity = opacity;
-    }
-  }
-
-  function _flipDone(next) {
-    /* Transfer back face image to curr */
-    $curr.style.backgroundImage = $fback.style.backgroundImage;
-    $curr.dataset.loadedSrc     = PAGES[next].src;
-    $curr.classList.remove('img-loading');
-    $curr.classList.add('img-ready');
-    $curr.style.opacity = '1';
-
-    /* Reset */
-    $flipper.style.display    = 'none';
-    $flipper.style.transform  = 'rotateY(0deg)';
-    $book.style.transform     = 'scale(1)';
-    _clearGloss($ffront);
-    _clearGloss($fback);
-
-    $under.style.backgroundImage = '';
-    $under.dataset.loadedSrc     = '';
-
+  function _flipDone(next, imgN){
     cur  = next;
     busy = false;
+    /* Draw final static state */
+    renderFrame($ctx, _W, _H, imgN, null, 0, 1);
     updateUI(cur);
-    preloadWindow(cur);
+    preloadAround(cur);
   }
 
-  function _clearGloss(face) {
-    if(face._glossEl) face._glossEl.style.opacity = 0;
-    if(face._edgeEl)  face._edgeEl.style.opacity  = 0;
-  }
-
-  /* ── Snap Back (drag released without enough momentum) ────── */
-  function snapBack(currentAngle, dir) {
-    var SNAP_MS = 320;
-    var start   = null;
+  /* ── Snap back ─────────────────────────────────────────── */
+  function _snapBack(dragP, dir){
+    if(busy) return;
     busy = true;
-
-    function step(ts) {
-      if(!start) start = ts;
-      var t   = clamp((ts - start) / SNAP_MS, 0, 1);
-      var e   = easeOutCubic(t);
-      var deg = currentAngle * (1 - e);
-      $flipper.style.transform = 'rotateY(' + deg + 'deg)';
-      _setGloss($ffront, 0, 0);
-      _setGloss($fback,  0, 0);
-      if(t < 1) {
-        rafId = requestAnimationFrame(step);
-      } else {
-        $flipper.style.display   = 'none';
-        $flipper.style.transform = 'rotateY(0deg)';
-        $curr.style.opacity      = '1';
-        $book.style.transform    = 'scale(1)';
-        $under.style.backgroundImage = '';
-        busy = false;
-      }
+    var imgC = _imgCache[PAGES[cur].src] || null;
+    var imgN = _imgCache[PAGES[cur+dir] ? PAGES[cur+dir].src : ''] || null;
+    var SNAP = 280, startT = null;
+    var startP = dragP;
+    function step(ts){
+      if(!startT) startT=ts;
+      var t = clamp((ts-startT)/SNAP,0,1);
+      var p = startP * (1 - easeOutCubic(t));
+      renderFrame($ctx,_W,_H,imgC,imgN,p,dir);
+      if(t<1){ rafId=requestAnimationFrame(step); }
+      else { renderFrame($ctx,_W,_H,imgC,null,0,1); busy=false; }
     }
-    rafId = requestAnimationFrame(step);
+    rafId=requestAnimationFrame(step);
   }
 
-  /* ── Drag ────────────────────────────────────────────────── */
-  var _drag = {
-    active:     false,
-    dir:        0,
-    startX:     0,
-    lastX:      0,
-    lastT:      0,
-    velX:       0,
-    angle:      0,
-    threshold:  0,
-    ready:      false   /* flipper set up */
-  };
+  /* ── DRAG ───────────────────────────────────────────────── */
+  /*
+    Drag maps finger position → flip progress (0→1).
+    RTL: drag RIGHT = forward (+1), drag LEFT = backward (-1).
+    We render live frames on every touchmove/mousemove.
+  */
+  var _d={active:false,dir:0,sx:0,lx:0,lt:0,vx:0,p:0,ready:false};
 
-  function _dragStart(clientX) {
+  function _dragStart(cx){
     if(busy) return;
-    _drag.active  = true;
-    _drag.startX  = clientX;
-    _drag.lastX   = clientX;
-    _drag.lastT   = performance.now();
-    _drag.velX    = 0;
-    _drag.dir     = 0;
-    _drag.angle   = 0;
-    _drag.ready   = false;
+    _d.active=true; _d.dir=0; _d.sx=cx; _d.lx=cx;
+    _d.lt=performance.now(); _d.vx=0; _d.p=0; _d.ready=false;
   }
 
-  function _dragMove(clientX) {
-    if(!_drag.active || busy) return;
-    var now = performance.now();
-    var dt  = now - _drag.lastT;
-    if(dt > 0) _drag.velX = (clientX - _drag.lastX) / dt; /* px/ms */
-    _drag.lastX = clientX;
-    _drag.lastT = now;
+  function _dragMove(cx){
+    if(!_d.active||busy) return;
+    var now=performance.now(), dt=now-_d.lt;
+    if(dt>0) _d.vx=(cx-_d.lx)/dt;
+    _d.lx=cx; _d.lt=now;
+    var dx=cx-_d.sx;
 
-    var dx = clientX - _drag.startX;
-
-    /* Determine direction on first 10px of movement */
-    if(_drag.dir === 0) {
-      if(Math.abs(dx) < 10) return;
-      /* RTL: drag RIGHT (+dx) = forward (next page)
-              drag LEFT  (-dx) = backward (prev page) */
-      _drag.dir = dx > 0 ? 1 : -1;
-      var next = cur + _drag.dir;
-      if(next < 0 || next >= PAGES.length) {
-        _drag.active = false;
-        return;
-      }
-
-      /* Set up flipper for live drag */
-      var fromLeft = (_drag.dir > 0);
-      loadImg($under, PAGES[next].src);
-      $ffront.style.backgroundImage = $curr.style.backgroundImage || '';
-      $ffront.dataset.loadedSrc     = PAGES[cur].src;
-      $ffront.classList.add('img-ready');
-      loadImg($fback, PAGES[next].src);
-      $flipper.style.transformOrigin = fromLeft ? 'left center' : 'right center';
-      $flipper.style.display = 'block';
-      $curr.style.opacity = '0';
-      _drag.ready = true;
-      _drag.threshold = _W * 0.20;
+    if(_d.dir===0){
+      if(Math.abs(dx)<12) return;
+      _d.dir=dx>0?1:-1;
+      var nxt=cur+_d.dir;
+      if(nxt<0||nxt>=PAGES.length){ _d.active=false; return; }
+      /* Preload destination immediately */
+      getImage(PAGES[nxt].src, null);
+      _d.ready=true;
     }
+    if(!_d.ready) return;
 
-    if(!_drag.ready) return;
+    var raw = dx * _d.dir;
+    /* Map drag distance to progress. Full width drag = full flip. */
+    var bW  = $book.clientWidth;
+    _d.p    = clamp(raw / (bW * 0.75), 0, 0.92);
 
-    /* Map drag distance to angle (max 165° while dragging) */
-    var fromLeft2 = _drag.dir > 0;
-    var raw       = dx * _drag.dir; /* always positive in drag direction */
-    var frac      = clamp(raw / (_W * 0.65), 0, 0.92);
-    var angle     = fromLeft2 ? frac * 180 : -frac * 180;
-    _drag.angle   = angle;
+    var imgC = _imgCache[PAGES[cur].src] || null;
+    var nxt  = cur + _d.dir;
+    var imgN = _imgCache[PAGES[nxt]?PAGES[nxt].src:''] || null;
+    if(imgC) renderFrame($ctx,_W,_H,imgC,imgN,_d.p,_d.dir);
+  }
 
-    $flipper.style.transform = 'rotateY(' + angle + 'deg)';
-
-    /* Gloss during drag */
-    var flipFrac = Math.abs(angle) / 180;
-    var glossPeak = 1 - Math.abs(flipFrac - 0.5) * 4;
-    glossPeak = clamp(glossPeak, 0, 1);
-    if(flipFrac <= 0.5) {
-      _setGloss($ffront, glossPeak * 0.6, flipFrac * 200);
+  function _dragEnd(cx){
+    if(!_d.active) return;
+    _d.active=false;
+    if(!_d.ready||_d.dir===0) return;
+    var moved = _d.p > 0.18;
+    var fast  = Math.abs(_d.vx) > 0.22;
+    if(moved||(fast&&_d.p>0.08)){
+      busy=false;
+      flip(_d.dir, true, _d.p);
     } else {
-      _setGloss($fback,  glossPeak * 0.5, (flipFrac - 0.5) * 200);
-      _setGloss($ffront, 0, 0);
+      _snapBack(_d.p, _d.dir);
     }
+    _d.dir=0;
   }
 
-  function _dragEnd(clientX) {
-    if(!_drag.active) return;
-    _drag.active = false;
-
-    if(!_drag.ready || _drag.dir === 0) return;
-
-    var dx        = clientX - _drag.startX;
-    var moved     = Math.abs(dx) > _drag.threshold;
-    var fast      = Math.abs(_drag.velX) > 0.28; /* px/ms */
-    var progress  = Math.abs(_drag.angle) / 180;
-
-    if(moved || (fast && progress > 0.10)) {
-      /* Commit — continue animation from current drag angle */
-      busy = false;
-      flip(_drag.dir, true, _drag.angle);
-    } else {
-      /* Snap back */
-      snapBack(_drag.angle, _drag.dir);
-      _clearGloss($ffront);
-      _clearGloss($fback);
-    }
-    _drag.dir = 0;
+  /* ── Tilt (desktop 3D) ─────────────────────────────────── */
+  var _tilt={x:0,y:0,tx:0,ty:0,raf:null};
+  var MAX_T=3.5;
+  function _tiltLoop(){
+    _tilt.x=lerp(_tilt.x,_tilt.tx,0.07);
+    _tilt.y=lerp(_tilt.y,_tilt.ty,0.07);
+    if(!busy) $book.style.transform=
+      'perspective(1800px) rotateX('+_tilt.y+'deg) rotateY('+_tilt.x+'deg)';
+    var m=Math.abs(_tilt.x-_tilt.tx)>0.01||Math.abs(_tilt.y-_tilt.ty)>0.01;
+    _tilt.raf=m?requestAnimationFrame(_tiltLoop):null;
   }
 
-  /* ── Jump (instant, no animation) ───────────────────────── */
-  function jumpTo(idx) {
-    if(busy) return;
-    idx = clamp(idx, 0, PAGES.length - 1);
-    showPage(idx);
-  }
+  /* ── Init ──────────────────────────────────────────────── */
+  function init(){
+    _initCanvas();
+    resize();
+    window.addEventListener('resize', resize);
 
-  /* ── Bind gloss/edge overlay elements ────────────────────── */
-  /* We inject dedicated overlay divs into each face so we can
-     animate them without touching background-image or filter */
-  function _buildOverlays() {
-    [$ffront, $fback].forEach(function(face){
-      var gloss = document.createElement('div');
-      gloss.style.cssText =
-        'position:absolute;inset:0;pointer-events:none;z-index:3;' +
-        'background:linear-gradient(105deg,' +
-        'transparent 25%,rgba(255,255,255,0.06) 44%,' +
-        'rgba(255,255,255,0.11) 50%,rgba(255,255,255,0.06) 56%,transparent 75%);' +
-        'background-size:200% 100%;opacity:0;' +
-        'border-radius:3px;';
-      face._glossEl = gloss;
-      face.appendChild(gloss);
-
-      var edge = document.createElement('div');
-      edge.style.cssText =
-        'position:absolute;top:0;width:36px;height:100%;' +
-        'pointer-events:none;z-index:2;opacity:0;border-radius:3px;';
-      face._edgeEl = edge;
-      face.appendChild(edge);
+    /* Build dots */
+    $dots.innerHTML='';
+    PAGES.forEach(function(_,i){
+      var d=document.createElement('div');
+      d.className='dot';
+      d.addEventListener('click',function(){ Flip.jumpTo(i); });
+      $dots.appendChild(d);
     });
 
-    /* front: shadow on right edge; back: shadow on left edge */
-    $ffront._edgeEl.style.right = '0';
-    $ffront._edgeEl.style.background =
-      'linear-gradient(to left,rgba(0,0,0,0.45),transparent)';
-    $fback._edgeEl.style.left = '0';
-    $fback._edgeEl.style.background =
-      'linear-gradient(to right,rgba(0,0,0,0.4),transparent)';
+    /* Eagerly preload first 10 */
+    for(var i=0;i<Math.min(10,PAGES.length);i++) getImage(PAGES[i].src,null);
+
+    showPage(0);
+
+    /* Touch */
+    $canvas.addEventListener('touchstart',function(e){ _dragStart(e.touches[0].clientX); },{passive:true});
+    $canvas.addEventListener('touchmove',function(e){
+      _dragMove(e.touches[0].clientX);
+      if(_d.dir!==0) e.preventDefault();
+    },{passive:false});
+    $canvas.addEventListener('touchend',function(e){ _dragEnd(e.changedTouches[0].clientX); },{passive:true});
+    $canvas.addEventListener('touchcancel',function(e){ _dragEnd(e.changedTouches[0].clientX); },{passive:true});
+
+    /* Mouse */
+    $canvas.addEventListener('mousedown',function(e){ _dragStart(e.clientX); e.preventDefault(); });
+    document.addEventListener('mousemove',function(e){ _dragMove(e.clientX); });
+    document.addEventListener('mouseup',function(e){ _dragEnd(e.clientX); });
+
+    /* Cursor */
+    $canvas.addEventListener('mousedown',function(){ $canvas.style.cursor='grabbing'; });
+    document.addEventListener('mouseup',function(){ $canvas.style.cursor='grab'; });
+
+    /* Tilt */
+    document.addEventListener('pointermove',function(e){
+      if(e.pointerType==='touch'||busy) return;
+      var cx=window.innerWidth/2,cy=window.innerHeight/2;
+      _tilt.tx=((e.clientX-cx)/cx)*MAX_T;
+      _tilt.ty=-((e.clientY-cy)/cy)*MAX_T;
+      if(!_tilt.raf) _tilt.raf=requestAnimationFrame(_tiltLoop);
+    });
+    document.addEventListener('mouseleave',function(){
+      _tilt.tx=0;_tilt.ty=0;
+      if(!_tilt.raf) _tilt.raf=requestAnimationFrame(_tiltLoop);
+    });
+
+    /* Buttons */
+    document.getElementById('btn-back').addEventListener('click',function(){ flip(-1,false,0); });
+    document.getElementById('btn-fwd') .addEventListener('click',function(){ flip( 1,false,0); });
+
+    /* Keyboard */
+    document.addEventListener('keydown',function(e){
+      if(document.activeElement===document.getElementById('search-input')) return;
+      if(e.key==='ArrowLeft' ||e.key==='ArrowDown')  flip( 1,false,0);
+      if(e.key==='ArrowRight'||e.key==='ArrowUp')    flip(-1,false,0);
+      if(e.key==='f'||e.key==='F') WG.toggleFS();
+    });
   }
 
-  /* ── Tilt (3D hover tilt on desktop) ─────────────────────── */
-  var _tilt = {x:0, y:0, tx:0, ty:0, raf:null};
-  var MAX_TILT = 3.5;
-
-  function _tiltFrame() {
-    _tilt.x = lerp(_tilt.x, _tilt.tx, 0.07);
-    _tilt.y = lerp(_tilt.y, _tilt.ty, 0.07);
-    if(!busy) {
-      $book.style.transform =
-        'perspective(1800px) rotateX(' + _tilt.y + 'deg) rotateY(' + _tilt.x + 'deg)';
-    }
-    var moving = Math.abs(_tilt.x-_tilt.tx)>0.01 || Math.abs(_tilt.y-_tilt.ty)>0.01;
-    _tilt.raf = moving ? requestAnimationFrame(_tiltFrame) : null;
-  }
-
-  /* ── Public API ──────────────────────────────────────────── */
   return {
-    init: function() {
-      _buildOverlays();
-      resize();
-      showPage(0);
-      window.addEventListener('resize', resize);
-
-      /* Build dots */
-      var track = $dots;
-      track.innerHTML = '';
-      PAGES.forEach(function(_, i){
-        var d = document.createElement('div');
-        d.className = 'dot';
-        d.addEventListener('click', function(){ jumpTo(i); });
-        track.appendChild(d);
-      });
-      updateUI(0);
-
-      /* Bind drag — touch */
-      $book.addEventListener('touchstart', function(e){
-        _dragStart(e.touches[0].clientX);
-      }, {passive:true});
-      $book.addEventListener('touchmove', function(e){
-        _dragMove(e.touches[0].clientX);
-        if(_drag.dir !== 0) e.preventDefault();
-      }, {passive:false});
-      $book.addEventListener('touchend', function(e){
-        _dragEnd(e.changedTouches[0].clientX);
-      }, {passive:true});
-      $book.addEventListener('touchcancel', function(e){
-        _dragEnd(e.changedTouches[0].clientX);
-      }, {passive:true});
-
-      /* Bind drag — mouse */
-      $book.addEventListener('mousedown', function(e){
-        _dragStart(e.clientX);
-        e.preventDefault();
-      });
-      document.addEventListener('mousemove', function(e){
-        _dragMove(e.clientX);
-      });
-      document.addEventListener('mouseup', function(e){
-        _dragEnd(e.clientX);
-      });
-
-      /* Tilt — pointer move (desktop only) */
-      document.addEventListener('pointermove', function(e){
-        if(e.pointerType === 'touch' || busy) return;
-        var cx = window.innerWidth  / 2;
-        var cy = window.innerHeight / 2;
-        _tilt.tx = ((e.clientX - cx) / cx) * MAX_TILT;
-        _tilt.ty = -((e.clientY - cy) / cy) * MAX_TILT;
-        if(!_tilt.raf) _tilt.raf = requestAnimationFrame(_tiltFrame);
-      });
-      document.addEventListener('mouseleave', function(){
-        _tilt.tx = 0; _tilt.ty = 0;
-        if(!_tilt.raf) _tilt.raf = requestAnimationFrame(_tiltFrame);
-      });
-
-      /* Arrow buttons */
-      document.getElementById('btn-back').addEventListener('click', function(){
-        flip(-1, false, 0);
-      });
-      document.getElementById('btn-fwd').addEventListener('click', function(){
-        flip(1, false, 0);
-      });
-
-      /* Keyboard */
-      document.addEventListener('keydown', function(e){
-        var si = document.getElementById('search-input');
-        if(document.activeElement === si) return;
-        if(e.key==='ArrowLeft'  || e.key==='ArrowDown')  flip(1,  false, 0);
-        if(e.key==='ArrowRight' || e.key==='ArrowUp')    flip(-1, false, 0);
-        if(e.key==='f' || e.key==='F') WG.toggleFS();
-      });
-    },
-
+    init:   init,
     flip:   flip,
-    jumpTo: jumpTo,
+    resize: resize,
+    jumpTo: function(idx){ if(!busy) showPage(clamp(idx,0,PAGES.length-1)); },
     get cur(){ return cur; }
   };
 
@@ -659,102 +770,72 @@ var Flip = (function(){
 /* ============================================================
    APP CONTROLLER
    ============================================================ */
-var WG = (function(){
+var WG=(function(){
 
-  /* ── Search ────────────────────────────────────────────── */
-  function goToPage() {
-    var input = document.getElementById('search-input');
-    var val   = parseInt(input.value, 10);
-    input.value = '';
-    input.blur();
-    if(isNaN(val) || val < 1 || val > PAGES.length) {
-      showToast('Enter a number between 1 and ' + PAGES.length);
-      return;
-    }
-    Flip.jumpTo(val - 1);
+  function goToPage(){
+    var inp=document.getElementById('search-input');
+    var v=parseInt(inp.value,10);
+    inp.value=''; inp.blur();
+    if(isNaN(v)||v<1||v>PAGES.length){ showToast('Enter a number between 1 and '+PAGES.length); return; }
+    Flip.jumpTo(v-1);
   }
 
-  /* ── Toast ──────────────────────────────────────────────── */
-  var _tt = null;
-  function showToast(msg) {
-    var t = document.getElementById('toast');
-    t.textContent = msg;
-    t.classList.add('show');
-    clearTimeout(_tt);
-    _tt = setTimeout(function(){ t.classList.remove('show'); }, 2600);
+  var _tt=null;
+  function showToast(msg){
+    var t=document.getElementById('toast');
+    t.textContent=msg; t.classList.add('show');
+    clearTimeout(_tt); _tt=setTimeout(function(){ t.classList.remove('show'); },2600);
   }
 
-  /* ── Fullscreen ─────────────────────────────────────────── */
-  function toggleFS() {
-    var el = document.documentElement;
-    var inFS = document.fullscreenElement || document.webkitFullscreenElement;
-    if(!inFS) {
-      (el.requestFullscreen || el.webkitRequestFullscreen || function(){}). call(el);
-    } else {
-      (document.exitFullscreen || document.webkitExitFullscreen || function(){}).call(document);
-    }
+  function toggleFS(){
+    var el=document.documentElement;
+    var fs=document.fullscreenElement||document.webkitFullscreenElement;
+    if(!fs)(el.requestFullscreen||el.webkitRequestFullscreen||function(){}).call(el);
+    else   (document.exitFullscreen||document.webkitExitFullscreen||function(){}).call(document);
   }
   ['fullscreenchange','webkitfullscreenchange'].forEach(function(ev){
-    document.addEventListener(ev, function(){
-      var inFS = document.fullscreenElement || document.webkitFullscreenElement;
-      document.getElementById('fs-label').textContent = inFS ? 'Exit' : 'Full';
+    document.addEventListener(ev,function(){
+      var fs=document.fullscreenElement||document.webkitFullscreenElement;
+      document.getElementById('fs-label').textContent=fs?'Exit':'Full';
     });
   });
 
-  /* ── How-to ─────────────────────────────────────────────── */
-  function closeHowTo() {
+  function closeHowTo(){
     document.getElementById('howto').classList.remove('show');
     try{ localStorage.setItem('wg_catalog_seen','1'); }catch(e){}
   }
 
-  /* ── Background image detect ────────────────────────────── */
-  function detectBg() {
-    var img = new Image();
-    img.onload = function(){
-      document.getElementById('bg-layer').classList.add('with-image');
-    };
-    img.src = 'bg.jpg';
+  function detectBg(){
+    var img=new Image();
+    img.onload=function(){ document.getElementById('bg-layer').classList.add('with-image'); };
+    img.src='bg.jpg';
   }
 
-  /* ── Loader out ─────────────────────────────────────────── */
-  function initLoader() {
-    window.addEventListener('load', function(){
+  document.addEventListener('DOMContentLoaded',function(){
+    detectBg();
+    Flip.init();
+
+    document.getElementById('search-go').addEventListener('click',goToPage);
+    document.getElementById('search-input').addEventListener('keydown',function(e){
+      if(e.key==='Enter') goToPage();
+    });
+    document.getElementById('hw-close').addEventListener('click',closeHowTo);
+
+    window.addEventListener('load',function(){
       setTimeout(function(){
-        var l = document.getElementById('loader');
+        var l=document.getElementById('loader');
         l.classList.add('out');
         setTimeout(function(){
           l.remove();
           try{
-            if(!localStorage.getItem('wg_catalog_seen')){
+            if(!localStorage.getItem('wg_catalog_seen'))
               document.getElementById('howto').classList.add('show');
-            }
           }catch(e){}
-        }, 850);
-      }, 1000);
+        },850);
+      },900);
     });
-  }
-
-  /* ── Init ───────────────────────────────────────────────── */
-  document.addEventListener('DOMContentLoaded', function(){
-    detectBg();
-    Flip.init();
-    initLoader();
-
-    /* Wire search */
-    document.getElementById('search-go').addEventListener('click', goToPage);
-    document.getElementById('search-input').addEventListener('keydown', function(e){
-      if(e.key === 'Enter') goToPage();
-    });
-
-    /* Wire how-to close */
-    document.getElementById('hw-close').addEventListener('click', closeHowTo);
   });
 
-  return {
-    toggleFS:   toggleFS,
-    closeHowTo: closeHowTo,
-    goToPage:   goToPage,
-    showToast:  showToast
-  };
+  return { toggleFS:toggleFS, closeHowTo:closeHowTo, goToPage:goToPage, showToast:showToast };
 
 }());
